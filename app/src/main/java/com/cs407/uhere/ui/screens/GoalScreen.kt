@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,10 +35,14 @@ fun GoalScreen(){
     Box(modifier = Modifier.fillMaxSize().padding(0.dp, 48.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Weekly Time Goals",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 8.dp),
                 fontSize = 36.sp)
 
             Text("Select how many hours you would like to spend in each place per week",
-                fontSize = 12.sp)
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 24.dp, start = 16.dp, end = 16.dp))
 
             Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent)){
                 var sliderPosition by remember { mutableFloatStateOf(1f) }

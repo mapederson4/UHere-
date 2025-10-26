@@ -1,5 +1,6 @@
 package com.cs407.uhere.ui.screens
 
+import androidx.compose.material3.AlertDialog
 import android.widget.ImageView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,12 +16,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,10 +38,16 @@ import com.cs407.uhere.R
 
 @Composable
 fun HomeScreen(){
+    var showDialog by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize().padding(0.dp, 48.dp)){
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-            Text("Weekly Overview")
+            Text(
+                text = "Weekly Overview",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom =16.dp)
+            )
 
             Column(modifier = Modifier.padding(16.dp).background(Color.White).fillMaxWidth()) {
                 Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent),
@@ -97,12 +107,31 @@ fun HomeScreen(){
                     }
                 }
             }
-
             OutlinedButton(
-                onClick = {/*show summary*/}
+                onClick = {showDialog = true}
             ) {
                 Text("View AI Weekly Summary")
             }
+        }
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = {
+                    Text(text = "AI Weekly Summary")
+                },
+                text = {
+                    Text(
+                        text = "This is a sample AI-generated summary of your week. " +
+                                "You attended 8 classes, completed 5 assignments, and " +
+                                "your most productive day was Tuesday with 6 hours of study time."
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showDialog = false }) {
+                        Text("Close")
+                    }
+                }
+            )
         }
     }
 }

@@ -29,6 +29,8 @@ import androidx.navigation.compose.rememberNavController
 import com.cs407.uhere.ui.screens.GoalScreen
 import com.cs407.uhere.ui.screens.HomeScreen
 import com.cs407.uhere.ui.theme.UHereTheme
+import com.cs407.uhere.ui.screens.RewardScreen
+import com.cs407.uhere.ui.screens.SettingsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,8 +97,8 @@ fun AppNavigation() {
         ) {
             composable(Screen.Home.route) { HomeScreen() }
             composable(Screen.Goal.route) { GoalScreen() }
-            composable(Screen.Reward.route) { }
-            composable(Screen.Settings.route) { }
+            composable(Screen.Reward.route) { RewardScreen() }
+            composable(Screen.Settings.route) { SettingsScreen() }
         }
     }
 }
