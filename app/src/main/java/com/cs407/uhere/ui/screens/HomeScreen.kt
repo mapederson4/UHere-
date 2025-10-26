@@ -40,7 +40,7 @@ import com.cs407.uhere.R
 fun HomeScreen(){
     var showDialog by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize().padding(0.dp, 48.dp)){
+    Box(modifier = Modifier.fillMaxSize().padding(0.dp, 16.dp)){
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
             Text(
