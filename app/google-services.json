@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "433424956844",
+    "project_id": "uhere-71486",
+    "storage_bucket": "uhere-71486.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:433424956844:android:98f241ad04c8bfd3ba4e09",
+        "android_client_info": {
+          "package_name": "com.cs407.uhere"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFPG4a0GY6VFGnRs6kIg3eNzgoAy0QREg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
