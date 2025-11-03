@@ -1,33 +1,9 @@
 package com.cs407.uhere.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,114 +12,91 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cs407.uhere.R
+import com.cs407.uhere.data.LocationCategory
+import com.cs407.uhere.data.User
+import com.cs407.uhere.viewmodel.GoalViewModel
 import kotlin.math.roundToInt
 
 @Composable
-fun GoalScreen(){
+fun GoalScreen(
+    modifier: Modifier = Modifier,
+    userState: User?,
+    goalViewModel: GoalViewModel
+) {
     var slidersLocked by remember { mutableStateOf(true) }
+    var libraryHours by remember { mutableFloatStateOf(0f) }
+    var barHours by remember { mutableFloatStateOf(0f) }
+    var gymHours by remember { mutableFloatStateOf(0f) }
 
-    Box(modifier = Modifier.fillMaxSize().padding(0.dp, 16.dp)) {
+    val goalsWithProgress by goalViewModel.goalsWithProgress.collectAsState()
+
+    // Load current goals when screen opens
+    LaunchedEffect(userState) {
+        userState?.let { user ->
+            goalViewModel.loadGoalsWithProgress(user.id)
+        }
+    }
+
+    // Update sliders with loaded goals
+    LaunchedEffect(goalsWithProgress) {
+        goalsWithProgress.forEach { goal ->
+            when (goal.category) {
+                LocationCategory.LIBRARY -> libraryHours = goal.targetHours
+                LocationCategory.BAR -> barHours = goal.targetHours
+                LocationCategory.GYM -> gymHours = goal.targetHours
+            }
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize().padding(0.dp, 16.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Weekly Time Goals",
+            Text(
+                "Weekly Time Goals",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp),
-                fontSize = 36.sp)
+                fontSize = 36.sp
+            )
 
-            Text("Select how many hours you would like to spend in each place per week",
+            Text(
+                "Select how many hours you would like to spend in each place per week",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Gray,
-                modifier = Modifier.padding(bottom = 24.dp, start = 16.dp, end = 16.dp))
+                modifier = Modifier.padding(bottom = 24.dp, start = 16.dp, end = 16.dp)
+            )
 
-            Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent)){
-                var sliderPosition by remember { mutableFloatStateOf(1f) }
-                Column(){
-                    Row(modifier = Modifier.padding(8.dp).fillMaxWidth().height(IntrinsicSize.Min),
-                        horizontalArrangement = Arrangement.SpaceBetween){
-                        Image(painter = painterResource(R.drawable.book),
-                            contentDescription = "Library",
-                            modifier = Modifier.size(78.dp).padding(4.dp),
-                            contentScale = ContentScale.Fit)
+            // Library Goal
+            GoalCard(
+                iconRes = R.drawable.book,
+                label = "Library",
+                hours = libraryHours,
+                onHoursChange = { libraryHours = it },
+                progress = goalsWithProgress.find { it.category == LocationCategory.LIBRARY }?.progressPercentage ?: 0f,
+                enabled = !slidersLocked
+            )
 
-                        Column(verticalArrangement = Arrangement.SpaceBetween,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxHeight()){
-                            Text("Library")
+            // Bar Goal
+            GoalCard(
+                iconRes = R.drawable.drink,
+                label = "Bar",
+                hours = barHours,
+                onHoursChange = { barHours = it },
+                progress = goalsWithProgress.find { it.category == LocationCategory.BAR }?.progressPercentage ?: 0f,
+                enabled = !slidersLocked
+            )
 
-                            Text("${sliderPosition.toInt()} Hours")
-                        }
-
-                        CircularProgressIndicator(progress = {1.0F})
-                    }
-                    Slider(
-                        value = sliderPosition,
-                        onValueChange = { sliderPosition = it.roundToInt().toFloat()  },
-                        valueRange = 0F..20F,
-                        enabled = !slidersLocked
-                    )
-                }
-            }
-
-            Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent)){
-                var sliderPosition by remember { mutableFloatStateOf(1f) }
-                Column(){
-                    Row(modifier = Modifier.padding(8.dp).fillMaxWidth().height(IntrinsicSize.Min),
-                        horizontalArrangement = Arrangement.SpaceBetween){
-                        Image(painter = painterResource(R.drawable.drink),
-                            contentDescription = "Bar",
-                            modifier = Modifier.size(78.dp).padding(4.dp),
-                            contentScale = ContentScale.Fit)
-
-                        Column(verticalArrangement = Arrangement.SpaceBetween,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxHeight()){
-                            Text("Bar")
-
-                            Text("${sliderPosition.toInt()} Hours")
-                        }
-
-                        CircularProgressIndicator(progress = {0.3F})
-                    }
-                    Slider(
-                        value = sliderPosition,
-                        onValueChange = { sliderPosition = it.roundToInt().toFloat()  },
-                        valueRange = 0F..20F,
-                        enabled = !slidersLocked
-                    )
-                }
-            }
-
-            Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent)){
-                var sliderPosition by remember { mutableFloatStateOf(1f) }
-                Column(){
-                    Row(modifier = Modifier.padding(8.dp).fillMaxWidth().height(IntrinsicSize.Min),
-                        horizontalArrangement = Arrangement.SpaceBetween){
-                        Image(painter = painterResource(R.drawable.barbell),
-                            contentDescription = "Gym",
-                            modifier = Modifier.size(78.dp).padding(4.dp),
-                            contentScale = ContentScale.Fit)
-
-                        Column(verticalArrangement = Arrangement.SpaceBetween,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxHeight()){
-                            Text("Gym")
-
-                            Text("${sliderPosition.toInt()} Hours")
-                        }
-
-                        CircularProgressIndicator(progress = {0.5F})
-                    }
-                    Slider(
-                        value = sliderPosition,
-                        onValueChange = { sliderPosition = it.roundToInt().toFloat() },
-                        valueRange = 0F..20F,
-                        enabled = !slidersLocked
-                    )
-                }
-            }
+            // Gym Goal
+            GoalCard(
+                iconRes = R.drawable.barbell,
+                label = "Gym",
+                hours = gymHours,
+                onHoursChange = { gymHours = it },
+                progress = goalsWithProgress.find { it.category == LocationCategory.GYM }?.progressPercentage ?: 0f,
+                enabled = !slidersLocked
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Buttons ---
+            // Buttons
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -157,13 +110,72 @@ fun GoalScreen(){
                 }
 
                 Button(
-                    onClick = { slidersLocked = true },
+                    onClick = {
+                        slidersLocked = true
+                        // Save goals to database
+                        userState?.let { user ->
+                            val goals = mapOf(
+                                LocationCategory.LIBRARY to libraryHours,
+                                LocationCategory.BAR to barHours,
+                                LocationCategory.GYM to gymHours
+                            )
+                            goalViewModel.saveGoals(user.id, goals)
+                        }
+                    },
                     enabled = !slidersLocked,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF43A047))
                 ) {
                     Text("Save")
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun GoalCard(
+    iconRes: Int,
+    label: String,
+    hours: Float,
+    onHoursChange: (Float) -> Unit,
+    progress: Float,
+    enabled: Boolean
+) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Image(
+                    painter = painterResource(iconRes),
+                    contentDescription = label,
+                    modifier = Modifier
+                        .size(78.dp)
+                        .padding(4.dp),
+                    contentScale = ContentScale.Fit
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxHeight()
+                ) {
+                    Text(label)
+                    Text("${hours.toInt()} Hours")
+                }
+
+                CircularProgressIndicator(progress = { progress })
+            }
+            Slider(
+                value = hours,
+                onValueChange = { onHoursChange(it.roundToInt().toFloat()) },
+                valueRange = 0F..20F,
+                enabled = enabled
+            )
         }
     }
 }

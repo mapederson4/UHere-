@@ -26,7 +26,7 @@ data class Reward(
 )
 
 @Composable
-fun RewardScreen() {
+fun RewardScreen(modifier: Modifier = Modifier) {
     // Replace these with your actual drawable resource IDs
     val rewards = listOf(
         Reward(1, R.drawable.reward, "Reward 1", "This is the first reward"),
