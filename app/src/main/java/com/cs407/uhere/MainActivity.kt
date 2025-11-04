@@ -197,7 +197,8 @@ fun AppNavigation(
                 SettingsScreen(
                     modifier = Modifier.padding(innerPadding),
                     userState = userState,
-                    userViewModel = userViewModel
+                    userViewModel = userViewModel,
+                    goalViewModel = goalViewModel  // Add this line
                 )
             }
         }

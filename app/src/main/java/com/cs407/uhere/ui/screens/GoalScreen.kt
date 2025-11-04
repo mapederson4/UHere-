@@ -71,6 +71,7 @@ fun GoalScreen(
                 hours = libraryHours,
                 onHoursChange = { libraryHours = it },
                 progress = goalsWithProgress.find { it.category == LocationCategory.LIBRARY }?.progressPercentage ?: 0f,
+                currentHours = goalsWithProgress.find { it.category == LocationCategory.LIBRARY }?.let { it.currentMinutes / 60f } ?: 0f,
                 enabled = !slidersLocked
             )
 
@@ -81,6 +82,7 @@ fun GoalScreen(
                 hours = barHours,
                 onHoursChange = { barHours = it },
                 progress = goalsWithProgress.find { it.category == LocationCategory.BAR }?.progressPercentage ?: 0f,
+                currentHours = goalsWithProgress.find { it.category == LocationCategory.BAR }?.let { it.currentMinutes / 60f } ?: 0f,
                 enabled = !slidersLocked
             )
 
@@ -91,6 +93,7 @@ fun GoalScreen(
                 hours = gymHours,
                 onHoursChange = { gymHours = it },
                 progress = goalsWithProgress.find { it.category == LocationCategory.GYM }?.progressPercentage ?: 0f,
+                currentHours = goalsWithProgress.find { it.category == LocationCategory.GYM }?.let { it.currentMinutes / 60f } ?: 0f,
                 enabled = !slidersLocked
             )
 
@@ -139,6 +142,7 @@ fun GoalCard(
     hours: Float,
     onHoursChange: (Float) -> Unit,
     progress: Float,
+    currentHours: Float,
     enabled: Boolean
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = Color.Transparent)) {
@@ -165,10 +169,31 @@ fun GoalCard(
                     modifier = Modifier.fillMaxHeight()
                 ) {
                     Text(label)
-                    Text("${hours.toInt()} Hours")
+
+                    // Show current progress vs goal
+                    Text(
+                        text = if (hours.toInt() == 1) {
+                            "${currentHours.toInt()}/${hours.toInt()} Hour"
+                        } else {
+                            "${currentHours.toInt()}/${hours.toInt()} Hours"
+                        },
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
 
-                CircularProgressIndicator(progress = { progress })
+                // Circular progress indicator
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.size(64.dp),
+                    )
+                    // Show percentage inside circle
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 12.sp
+                    )
+                }
             }
             Slider(
                 value = hours,

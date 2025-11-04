@@ -8,14 +8,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.cs407.uhere.data.User
 import com.cs407.uhere.viewmodel.UserViewModel
+import com.cs407.uhere.viewmodel.GoalViewModel
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     userState: User?,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
+    goalViewModel: GoalViewModel // Add this parameter
 ) {
     var tracking by remember { mutableStateOf(false) }
+    var showDemoMessage by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier.fillMaxSize().padding(16.dp)
@@ -68,6 +71,59 @@ fun SettingsScreen(
                 }
             }
 
+            // **DEMO DATA CARD**
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Demo Mode",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = "Load sample progress data for testing",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                userState?.let { user ->
+                                    goalViewModel.insertDemoProgress(user.id)
+                                    showDemoMessage = true
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Load Demo Data")
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                userState?.let { user ->
+                                    goalViewModel.clearDemoProgress(user.id)
+                                    showDemoMessage = true
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Clear Data")
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             // Logout Button
@@ -81,6 +137,14 @@ fun SettingsScreen(
                 )
             ) {
                 Text("Logout")
+            }
+        }
+
+        // Show snackbar message
+        if (showDemoMessage) {
+            LaunchedEffect(Unit) {
+                kotlinx.coroutines.delay(2000)
+                showDemoMessage = false
             }
         }
     }
