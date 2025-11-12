@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
 
     alias(libs.plugins.android.application)
@@ -9,6 +11,12 @@ plugins {
     id("com.google.gms.google-services")
     kotlin("plugin.serialization") version "2.2.20"
 
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
@@ -26,6 +34,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY", "")
     }
 
     buildTypes {
@@ -172,6 +181,18 @@ dependencies {
 
     // Accompanist Permissions (for location permissions)
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
+
+    //location services
+    // Google Play Services - Location & Maps
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:4.3.0")
+
+    // For geofencing (optional but recommended)
+    implementation("com.google.android.gms:play-services-places:17.0.0")
+
+    // WorkManager for background location tracking
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Testing
     testImplementation(libs.junit)

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -25,23 +26,24 @@ import com.cs407.uhere.data.initializeBadges
 import com.cs407.uhere.ui.screens.*
 import com.cs407.uhere.ui.theme.UHereTheme
 import com.cs407.uhere.viewmodel.GoalViewModel
+import com.cs407.uhere.viewmodel.LocationViewModel  // ADD THIS
 import com.cs407.uhere.viewmodel.UserViewModel
 
 class MainActivity : ComponentActivity() {
     private val userViewModel: UserViewModel by viewModels()
     private val goalViewModel: GoalViewModel by viewModels()
+    private val locationViewModel: LocationViewModel by viewModels() // NEW
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        initializeBadges(this) // Initialize badges (only runs once)
-
+        initializeBadges(this)
         enableEdgeToEdge()
         setContent {
             UHereTheme {
                 AppNavigation(
                     userViewModel = userViewModel,
-                    goalViewModel = goalViewModel
+                    goalViewModel = goalViewModel,
+                    locationViewModel = locationViewModel // NEW
                 )
             }
         }
@@ -60,16 +62,18 @@ sealed class Screen(
     object Goal : Screen("goals", "Goal", res = R.drawable.baseline_alarm_24)
     object Reward : Screen("rewards", "Reward", Icons.Filled.Star)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
+    object Maps : Screen("maps", "Maps", Icons.Filled.LocationOn)
 }
 
 @Composable
 fun AppNavigation(
     userViewModel: UserViewModel,
-    goalViewModel: GoalViewModel
+    goalViewModel: GoalViewModel,
+    locationViewModel: LocationViewModel  // ADD THIS PARAMETER
 ) {
     val navController = rememberNavController()
     val userState by userViewModel.userState.collectAsState()
-    val items = listOf(Screen.Home, Screen.Goal, Screen.Reward, Screen.Settings)
+    val items = listOf(Screen.Home, Screen.Goal, Screen.Maps, Screen.Reward, Screen.Settings)
 
     // Navigate based on authentication state
     LaunchedEffect(userState) {
@@ -180,6 +184,18 @@ fun AppNavigation(
             }
         }
 
+        composable(Screen.Maps.route) {
+            Scaffold(
+                bottomBar = { BottomNavigationBar(navController, items) }
+            ) { innerPadding ->
+                MapsScreen(
+                    modifier = Modifier.padding(innerPadding),
+                    userState = userState,
+                    locationViewModel = locationViewModel
+                )
+            }
+        }
+
         composable(Screen.Reward.route) {
             Scaffold(
                 bottomBar = { BottomNavigationBar(navController, items) }
@@ -198,7 +214,7 @@ fun AppNavigation(
                     modifier = Modifier.padding(innerPadding),
                     userState = userState,
                     userViewModel = userViewModel,
-                    goalViewModel = goalViewModel  // Add this line
+                    goalViewModel = goalViewModel
                 )
             }
         }
