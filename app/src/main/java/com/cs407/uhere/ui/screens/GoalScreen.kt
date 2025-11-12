@@ -30,10 +30,17 @@ fun GoalScreen(
 
     val goalsWithProgress by goalViewModel.goalsWithProgress.collectAsState()
 
-    // Load current goals when screen opens
+    // Start auto-refresh when screen opens
     LaunchedEffect(userState) {
         userState?.let { user ->
-            goalViewModel.loadGoalsWithProgress(user.id)
+            goalViewModel.startAutoRefresh(user.id)
+        }
+    }
+
+    // Stop refresh when leaving screen
+    DisposableEffect(Unit) {
+        onDispose {
+            goalViewModel.stopAutoRefresh()
         }
     }
 
@@ -64,7 +71,6 @@ fun GoalScreen(
                 modifier = Modifier.padding(bottom = 24.dp, start = 16.dp, end = 16.dp)
             )
 
-            // Library Goal
             GoalCard(
                 iconRes = R.drawable.book,
                 label = "Library",
@@ -75,7 +81,6 @@ fun GoalScreen(
                 enabled = !slidersLocked
             )
 
-            // Bar Goal
             GoalCard(
                 iconRes = R.drawable.drink,
                 label = "Bar",
@@ -86,7 +91,6 @@ fun GoalScreen(
                 enabled = !slidersLocked
             )
 
-            // Gym Goal
             GoalCard(
                 iconRes = R.drawable.barbell,
                 label = "Gym",
@@ -99,7 +103,6 @@ fun GoalScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Buttons
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -115,7 +118,6 @@ fun GoalScreen(
                 Button(
                     onClick = {
                         slidersLocked = true
-                        // Save goals to database
                         userState?.let { user ->
                             val goals = mapOf(
                                 LocationCategory.LIBRARY to libraryHours,
@@ -170,7 +172,6 @@ fun GoalCard(
                 ) {
                     Text(label)
 
-                    // Show current progress vs goal
                     Text(
                         text = if (hours.toInt() == 1) {
                             "${currentHours.toInt()}/${hours.toInt()} Hour"
@@ -181,13 +182,11 @@ fun GoalCard(
                     )
                 }
 
-                // Circular progress indicator
                 Box(contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         progress = { progress },
                         modifier = Modifier.size(64.dp),
                     )
-                    // Show percentage inside circle
                     Text(
                         text = "${(progress * 100).toInt()}%",
                         style = MaterialTheme.typography.labelSmall,

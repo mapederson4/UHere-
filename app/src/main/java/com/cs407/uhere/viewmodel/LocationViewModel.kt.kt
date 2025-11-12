@@ -6,9 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.cs407.uhere.data.LocationCategory
 import com.cs407.uhere.data.Place
 import com.cs407.uhere.data.UHereDatabase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 class LocationViewModel(application: Application) : AndroidViewModel(application) {
@@ -22,9 +24,13 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
 
     fun loadUserPlaces(userId: Int) {
         viewModelScope.launch {
-            placeDao.getUserPlaces(userId).collect { places ->
-                _userPlaces.value = places
-            }
+            // flowOn ensures DB query runs on IO thread
+            placeDao.getUserPlaces(userId)
+                .flowOn(Dispatchers.IO)
+                .collect { places ->
+                    // Collection happens on Main, but query was on IO
+                    _userPlaces.value = places
+                }
         }
     }
 
@@ -36,7 +42,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
         category: LocationCategory,
         radius: Double = 100.0
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {  // DB write on IO thread
             val place = Place(
                 name = name,
                 latitude = latitude,
@@ -50,7 +56,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deletePlace(place: Place) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {  // DB delete on IO thread
             placeDao.deletePlace(place)
         }
     }

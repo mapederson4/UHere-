@@ -15,14 +15,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.cs407.uhere.data.LocationCategory
-import com.cs407.uhere.data.Place
 import com.cs407.uhere.data.User
 import com.cs407.uhere.service.LocationTrackingService
 import com.cs407.uhere.viewmodel.LocationViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +34,9 @@ fun MapsScreen(
     val userPlaces by locationViewModel.userPlaces.collectAsState()
     val isTracking by locationViewModel.isTrackingEnabled.collectAsState()
 
+    var mapLoaded by remember { mutableStateOf(false) }
+    var mapError by remember { mutableStateOf<String?>(null) }
+
     var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -42,6 +44,14 @@ fun MapsScreen(
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         )
+    }
+
+    LaunchedEffect(Unit) {
+        val apiKey = context.packageManager
+            .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+            .metaData
+            .getString("com.google.android.geo.API_KEY")
+        android.util.Log.d("MapsScreen", "API Key loaded: ${apiKey?.take(10)}...")
     }
 
     var showAddPlaceDialog by remember { mutableStateOf(false) }
@@ -53,9 +63,11 @@ fun MapsScreen(
         hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
     }
 
-    // Load places when user changes
+    // Load places when user changes - with IO dispatcher
     LaunchedEffect(userState) {
-        userState?.let { locationViewModel.loadUserPlaces(it.id) }
+        userState?.let {
+            locationViewModel.loadUserPlaces(it.id)  //
+        }
     }
 
     val cameraPositionState = rememberCameraPositionState {
@@ -63,6 +75,13 @@ fun MapsScreen(
             LatLng(43.0731, -89.4012), // Madison, WI
             12f
         )
+    }
+
+    // Memoize markers to prevent recomposition lag
+    val markersAndCircles = remember(userPlaces) {
+        userPlaces.map { place ->
+            place to LatLng(place.latitude, place.longitude)
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -86,31 +105,79 @@ fun MapsScreen(
                 }
             }
         } else {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(isMyLocationEnabled = true),
-                uiSettings = MapUiSettings(myLocationButtonEnabled = true),
-                onMapClick = { latLng ->
-                    selectedLocation = latLng
-                    showAddPlaceDialog = true
-                }
-            ) {
-                // Draw circles for each place
-                userPlaces.forEach { place ->
-                    Marker(
-                        state = MarkerState(position = LatLng(place.latitude, place.longitude)),
-                        title = place.name,
-                        snippet = place.category.name
-                    )
+            // Show loading while map initializes
+            Box(modifier = Modifier.fillMaxSize()) {
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    cameraPositionState = cameraPositionState,
+                    properties = MapProperties(
+                        isMyLocationEnabled = true,
+                        // Reduce map features to speed up loading
+                        isTrafficEnabled = false,
+                        isBuildingEnabled = false
+                    ),
+                    uiSettings = MapUiSettings(
+                        myLocationButtonEnabled = true,
+                        mapToolbarEnabled = false, // Disable toolbar for faster loading
+                        zoomControlsEnabled = false
+                    ),
+                    onMapClick = { latLng ->
+                        selectedLocation = latLng
+                        showAddPlaceDialog = true
+                    },
+                    onMapLoaded = {
+                        mapLoaded = true
+                        android.util.Log.d("MapsScreen", "Map loaded successfully")
+                    }
+                ) {
+                    // Use memoized data to prevent recomposition
+                    markersAndCircles.forEach { (place, latLng) ->
+                        Marker(
+                            state = rememberMarkerState(position = latLng),
+                            title = place.name,
+                            snippet = place.category.name
+                        )
 
-                    Circle(
-                        center = LatLng(place.latitude, place.longitude),
-                        radius = place.radius,
-                        fillColor = androidx.compose.ui.graphics.Color.Blue.copy(alpha = 0.2f),
-                        strokeColor = androidx.compose.ui.graphics.Color.Blue,
-                        strokeWidth = 2f
+                        Circle(
+                            center = latLng,
+                            radius = place.radius,
+                            fillColor = androidx.compose.ui.graphics.Color.Blue.copy(alpha = 0.2f),
+                            strokeColor = androidx.compose.ui.graphics.Color.Blue,
+                            strokeWidth = 2f
+                        )
+                    }
+                }
+
+                // Loading indicator
+                if (!mapLoaded && mapError == null) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
+                }
+
+                // Error message
+                mapError?.let { error ->
+                    Card(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Map Error",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(error)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { mapError = null }) {
+                                Text("Retry")
+                            }
+                        }
+                    }
                 }
             }
 
@@ -163,6 +230,15 @@ fun MapsScreen(
                 showAddPlaceDialog = false
             }
         )
+    }
+
+    // Timeout detector for map loading
+    LaunchedEffect(Unit) {
+        delay(10000) // 10 seconds
+        if (!mapLoaded && mapError == null) {
+            mapError = "Map taking too long to load. Check your internet connection and API key."
+            android.util.Log.e("MapsScreen", "Map load timeout")
+        }
     }
 }
 

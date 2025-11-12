@@ -25,10 +25,17 @@ fun HomeScreen(
     var showDialog by remember { mutableStateOf(false) }
     val goalsWithProgress by goalViewModel.goalsWithProgress.collectAsState()
 
-    // Load goals when user state changes
+    // Start auto-refresh when user state changes
     LaunchedEffect(userState) {
         userState?.let { user ->
-            goalViewModel.loadGoalsWithProgress(user.id)
+            goalViewModel.startAutoRefresh(user.id)
+        }
+    }
+
+    // Stop refresh when leaving screen
+    DisposableEffect(Unit) {
+        onDispose {
+            goalViewModel.stopAutoRefresh()
         }
     }
 
@@ -52,7 +59,6 @@ fun HomeScreen(
                     .background(Color.White)
                     .fillMaxWidth()
             ) {
-                // Display progress for each category
                 goalsWithProgress.forEach { goalWithProgress ->
                     CategoryProgressCard(
                         category = goalWithProgress.category,
@@ -62,7 +68,6 @@ fun HomeScreen(
                     )
                 }
 
-                // Show placeholder if no goals
                 if (goalsWithProgress.isEmpty()) {
                     Text(
                         text = "No goals set yet. Go to Goals tab to set your weekly targets!",

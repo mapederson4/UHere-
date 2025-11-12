@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -26,7 +25,7 @@ import com.cs407.uhere.data.initializeBadges
 import com.cs407.uhere.ui.screens.*
 import com.cs407.uhere.ui.theme.UHereTheme
 import com.cs407.uhere.viewmodel.GoalViewModel
-import com.cs407.uhere.viewmodel.LocationViewModel  // ADD THIS
+import com.cs407.uhere.viewmodel.LocationViewModel
 import com.cs407.uhere.viewmodel.UserViewModel
 
 class MainActivity : ComponentActivity() {
