@@ -1,5 +1,6 @@
 package com.cs407.uhere
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,6 +29,7 @@ import com.cs407.uhere.ui.theme.UHereTheme
 import com.cs407.uhere.viewmodel.GoalViewModel
 import com.cs407.uhere.viewmodel.LocationViewModel
 import com.cs407.uhere.viewmodel.UserViewModel
+import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
     private val userViewModel: UserViewModel by viewModels()
@@ -35,6 +38,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val apiKey  = applicationContext.packageManager
+            .getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            .metaData
+            .getString("com.google.android.geo.API_KEY")
+        if(!Places.isInitialized()){
+            Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
+        }
         initializeBadges(this)
         enableEdgeToEdge()
         setContent {

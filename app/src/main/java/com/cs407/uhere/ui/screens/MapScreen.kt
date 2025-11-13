@@ -4,13 +4,18 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -18,10 +23,18 @@ import com.cs407.uhere.data.LocationCategory
 import com.cs407.uhere.data.User
 import com.cs407.uhere.service.LocationTrackingService
 import com.cs407.uhere.viewmodel.LocationViewModel
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +49,8 @@ fun MapsScreen(
 
     var mapLoaded by remember { mutableStateOf(false) }
     var mapError by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    var searchedLocation by remember { mutableStateOf<LatLng?>(null) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -130,6 +145,19 @@ fun MapsScreen(
                         android.util.Log.d("MapsScreen", "Map loaded successfully")
                     }
                 ) {
+                    searchedLocation?.let { latLng ->
+                        Marker(
+                            state = rememberMarkerState(position = latLng),
+                            title = "Selected Location",
+                            onClick = {
+                                selectedLocation = latLng
+                                showAddPlaceDialog = true
+                                true
+                            },
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                        )
+                    }
+
                     // Use memoized data to prevent recomposition
                     markersAndCircles.forEach { (place, latLng) ->
                         Marker(
@@ -146,7 +174,24 @@ fun MapsScreen(
                             strokeWidth = 2f
                         )
                     }
+
+
                 }
+                PlacesSearchBar(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(4.dp, 4.dp, 64.dp, 0.dp),
+                    onPlaceSelected = { place ->
+                        place.latLng?.let { latLng ->
+                            searchedLocation = latLng
+                            coroutineScope.launch {
+                                cameraPositionState.animate(
+                                    update = com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(latLng, 16f)
+                                )
+                            }
+                        }
+                    }
+                )
 
                 // Loading indicator
                 if (!mapLoaded && mapError == null) {
@@ -321,4 +366,77 @@ fun AddPlaceDialog(
             }
         }
     )
+}
+
+@Composable
+fun PlacesSearchBar(
+    onPlaceSelected: (Place) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val placesClient = remember { Places.createClient(context) }
+
+    var query by remember { mutableStateOf("") }
+    var predictions by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(modifier = modifier) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = {
+                query = it
+                if (it.length > 2) {
+                    val request = FindAutocompletePredictionsRequest.builder()
+                        .setQuery(it)
+                        .build()
+
+                    placesClient.findAutocompletePredictions(request)
+                        .addOnSuccessListener { response ->
+                            predictions = response.autocompletePredictions
+                        }
+                        .addOnFailureListener {
+                            predictions = emptyList()
+                        }
+                } else {
+                    predictions = emptyList()
+                }
+            },
+            placeholder = { Text("Search location...") },
+            singleLine = true,
+            trailingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White.copy(alpha = 0.7f), shape = RoundedCornerShape(12.dp))
+        )
+
+        if (predictions.isNotEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                Column {
+                    predictions.forEach { prediction ->
+                        DropdownMenuItem(
+                            text = { Text(prediction.getFullText(null).toString()) },
+                            onClick = {
+                                val placeId = prediction.placeId
+                                val placeRequest = FetchPlaceRequest.newInstance(
+                                    placeId,
+                                    listOf(Place.Field.LAT_LNG, Place.Field.NAME)
+                                )
+                                placesClient.fetchPlace(placeRequest)
+                                    .addOnSuccessListener { response ->
+                                        onPlaceSelected(response.place)
+                                        query = response.place.name ?: ""
+                                        predictions = emptyList()
+                                    }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
