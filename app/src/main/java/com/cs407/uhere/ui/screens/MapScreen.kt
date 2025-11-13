@@ -290,7 +290,7 @@ fun MapsScreen(
         val placeToDelete = userPlaces.find{
             it.latitude == toDelete!!.latitude && it.longitude== toDelete!!.longitude
         }
-        DeletePlaceDialoag(
+        DeletePlaceDialog(
             onDismiss = {
                 showDeletePlaceDialog = false
                 toDelete = null
@@ -397,7 +397,7 @@ fun AddPlaceDialog(
 }
 
 @Composable
-fun DeletePlaceDialoag(onDismiss: () -> Unit, onConfirm: () -> Unit){
+fun DeletePlaceDialog(onDismiss: () -> Unit, onConfirm: () -> Unit){
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Delete Place") },
