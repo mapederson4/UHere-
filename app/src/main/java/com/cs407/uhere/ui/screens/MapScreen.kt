@@ -70,7 +70,9 @@ fun MapsScreen(
     }
 
     var showAddPlaceDialog by remember { mutableStateOf(false) }
+    var showDeletePlaceDialog by remember { mutableStateOf(false) }
     var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
+    var toDelete by remember { mutableStateOf<LatLng?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -160,19 +162,26 @@ fun MapsScreen(
 
                     // Use memoized data to prevent recomposition
                     markersAndCircles.forEach { (place, latLng) ->
-                        Marker(
-                            state = rememberMarkerState(position = latLng),
-                            title = place.name,
-                            snippet = place.category.name
-                        )
+                        key(place.id) {
+                            Marker(
+                                state = rememberMarkerState(position = latLng),
+                                title = place.name,
+                                snippet = place.category.name,
+                                onInfoWindowClick = { marker ->
+                                    toDelete = marker.position
+                                    showDeletePlaceDialog = true
+                                }
+                            )
 
-                        Circle(
-                            center = latLng,
-                            radius = place.radius,
-                            fillColor = androidx.compose.ui.graphics.Color.Blue.copy(alpha = 0.2f),
-                            strokeColor = androidx.compose.ui.graphics.Color.Blue,
-                            strokeWidth = 2f
-                        )
+
+                            Circle(
+                                center = latLng,
+                                radius = place.radius,
+                                fillColor = androidx.compose.ui.graphics.Color.Blue.copy(alpha = 0.2f),
+                                strokeColor = androidx.compose.ui.graphics.Color.Blue,
+                                strokeWidth = 2f
+                            )
+                        }
                     }
 
 
@@ -277,6 +286,25 @@ fun MapsScreen(
         )
     }
 
+    if(showDeletePlaceDialog && toDelete != null){
+        val placeToDelete = userPlaces.find{
+            it.latitude == toDelete!!.latitude && it.longitude== toDelete!!.longitude
+        }
+        DeletePlaceDialoag(
+            onDismiss = {
+                showDeletePlaceDialog = false
+                toDelete = null
+            },
+            onConfirm = {
+                locationViewModel.deletePlace(placeToDelete!!)
+                showDeletePlaceDialog = false
+                toDelete = null
+            }
+
+
+        )
+    }
+
     // Timeout detector for map loading
     LaunchedEffect(Unit) {
         delay(10000) // 10 seconds
@@ -358,6 +386,26 @@ fun AddPlaceDialog(
                 enabled = name.isNotBlank()
             ) {
                 Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun DeletePlaceDialoag(onDismiss: () -> Unit, onConfirm: () -> Unit){
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Delete Place") },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm() }
+            ) {
+                Text("Delete")
             }
         },
         dismissButton = {
