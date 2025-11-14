@@ -15,6 +15,19 @@ import com.cs407.uhere.R
 import com.cs407.uhere.data.LocationCategory
 import com.cs407.uhere.data.User
 import com.cs407.uhere.viewmodel.GoalViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.IOException
+import com.cs407.uhere.BuildConfig
+
+private val httpClient = OkHttpClient()
 
 @Composable
 fun HomeScreen(
@@ -24,6 +37,11 @@ fun HomeScreen(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val goalsWithProgress by goalViewModel.goalsWithProgress.collectAsState()
+
+    var aiSummary by remember { mutableStateOf<String?>(null) }
+    var aiLoading by remember { mutableStateOf(false) }
+    var aiError by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     // Load goals when user state changes
     LaunchedEffect(userState) {
@@ -72,8 +90,28 @@ fun HomeScreen(
                 }
             }
 
+            // AI summary button
             OutlinedButton(
-                onClick = { showDialog = true }
+                onClick = {
+                    showDialog = true
+                    aiLoading = true
+                    aiError = null
+                    aiSummary = null
+
+                    coroutineScope.launch {
+                        try {
+                            val prompt = buildPromptFromGoals(goalsWithProgress)
+                            val result = callOpenAI(prompt)
+                            aiSummary = result
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            aiError = "Could not generate summary. Showing simple summary instead."
+                            aiSummary = generateAISummaryFallback(goalsWithProgress)
+                        } finally {
+                            aiLoading = false
+                        }
+                    }
+                }
             ) {
                 Text("View AI Weekly Summary")
             }
@@ -84,9 +122,28 @@ fun HomeScreen(
                 onDismissRequest = { showDialog = false },
                 title = { Text(text = "AI Weekly Summary") },
                 text = {
-                    Text(
-                        text = generateAISummary(goalsWithProgress)
-                    )
+                    when {
+                        aiLoading -> {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator()
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Generating your summary...")
+                            }
+                        }
+                        aiError != null -> {
+                            Column {
+                                Text(aiError ?: "")
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(aiSummary ?: "")
+                            }
+                        }
+                        aiSummary != null -> {
+                            Text(aiSummary ?: "")
+                        }
+                        else -> {
+                            Text("No data available yet. Set your goals and start tracking your time!")
+                        }
+                    }
                 },
                 confirmButton = {
                     TextButton(onClick = { showDialog = false }) {
@@ -143,7 +200,85 @@ fun CategoryProgressCard(
     }
 }
 
-fun generateAISummary(goalsWithProgress: List<com.cs407.uhere.viewmodel.GoalWithProgress>): String {
+fun buildPromptFromGoals(
+    goalsWithProgress: List<com.cs407.uhere.viewmodel.GoalWithProgress>
+): String {
+    if (goalsWithProgress.isEmpty()) {
+        return """
+            The user has not tracked any goals this week.
+            Write one short, encouraging sentence telling them to set some goals and start tracking.
+        """.trimIndent()
+    }
+
+    val goalsText = goalsWithProgress.joinToString("\n") { g ->
+        val hours = g.currentMinutes / 60
+        val mins = g.currentMinutes % 60
+        val categoryName = g.category.name.lowercase().replaceFirstChar { it.uppercase() }
+        "$categoryName: $hours h $mins m out of ${g.targetHours} h " +
+                "(progress ${(g.progressPercentage * 100).toInt()}%)"
+    }
+
+    return """
+        You are a friendly productivity coach for a college student.
+
+        Given this weekly time-tracking data, write:
+        - 2–4 sentences of encouraging summary
+        - 1 concrete suggestion for next week
+
+        Keep it casual, positive, and short.
+
+        Weekly data:
+        $goalsText
+    """.trimIndent()
+}
+
+suspend fun callOpenAI(prompt: String): String = withContext(Dispatchers.IO) {
+    val apiKey = BuildConfig.OPENAI_API_KEY
+
+    print(apiKey)
+
+    val mediaType = "application/json; charset=utf-8".toMediaType()
+
+    val root = JSONObject().apply {
+        put("model", "gpt-4.1-mini")
+        put("messages", JSONArray().apply {
+            put(
+                JSONObject().apply {
+                    put("role", "user")
+                    put("content", prompt)
+                }
+            )
+        })
+    }
+
+    val body = root.toString().toRequestBody(mediaType)
+
+    val request = Request.Builder()
+        .url("https://api.openai.com/v1/chat/completions")
+        .addHeader("Authorization", "Bearer $apiKey")
+        .addHeader("Content-Type", "application/json")
+        .post(body)
+        .build()
+
+    val response = httpClient.newCall(request).execute()
+
+    if (!response.isSuccessful) {
+        throw IOException("Unexpected code $response")
+    }
+
+    val responseBody = response.body?.string() ?: throw IOException("Empty response body")
+
+    val json = JSONObject(responseBody)
+    val choices = json.getJSONArray("choices")
+    val first = choices.getJSONObject(0)
+    val message = first.getJSONObject("message")
+    message.getString("content")
+}
+
+
+fun generateAISummaryFallback(
+    goalsWithProgress: List<com.cs407.uhere.viewmodel.GoalWithProgress>
+): String {
     if (goalsWithProgress.isEmpty()) {
         return "No data available yet. Set your goals and start tracking your time!"
     }

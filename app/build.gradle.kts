@@ -1,8 +1,22 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        load(file.inputStream())
+    }
+}
+
+val openAiKey: String = localProperties.getProperty("OPENAI_API_KEY") ?: ""
+
 plugins {
 
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
+
+
+
 
     //add plugins for firebase
     id("com.google.devtools.ksp")
@@ -26,6 +40,17 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField(
+            "String",
+            "OPENAI_API_KEY",
+            "\"$openAiKey\""
+        )
+
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -115,6 +140,9 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
 
     implementation(libs.kotlinx.serialization.json)
+
+    // for AI summary
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
 
     // To use Kotlin Symbol Processing (KSP)
