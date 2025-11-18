@@ -22,13 +22,20 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     private val _isTrackingEnabled = MutableStateFlow(false)
     val isTrackingEnabled: StateFlow<Boolean> = _isTrackingEnabled.asStateFlow()
 
+    private var currentUserId: Int? = null
+
     fun loadUserPlaces(userId: Int) {
+        // If user changed, clear state first
+        if (currentUserId != userId) {
+            _userPlaces.value = emptyList()
+            _isTrackingEnabled.value = false
+            currentUserId = userId
+        }
+
         viewModelScope.launch {
-            // flowOn ensures DB query runs on IO thread
             placeDao.getUserPlaces(userId)
                 .flowOn(Dispatchers.IO)
                 .collect { places ->
-                    // Collection happens on Main, but query was on IO
                     _userPlaces.value = places
                 }
         }
@@ -42,7 +49,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
         category: LocationCategory,
         radius: Double = 100.0
     ) {
-        viewModelScope.launch(Dispatchers.IO) {  // DB write on IO thread
+        viewModelScope.launch(Dispatchers.IO) {
             val place = Place(
                 name = name,
                 latitude = latitude,
@@ -56,12 +63,18 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deletePlace(place: Place) {
-        viewModelScope.launch(Dispatchers.IO) {  // DB delete on IO thread
+        viewModelScope.launch(Dispatchers.IO) {
             placeDao.deletePlace(place)
         }
     }
 
     fun setTrackingEnabled(enabled: Boolean) {
         _isTrackingEnabled.value = enabled
+    }
+
+    fun clearState() {
+        _userPlaces.value = emptyList()
+        _isTrackingEnabled.value = false
+        currentUserId = null
     }
 }

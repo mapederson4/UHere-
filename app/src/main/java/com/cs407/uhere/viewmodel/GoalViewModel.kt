@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.cs407.uhere.data.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 data class GoalWithProgress(
@@ -23,9 +24,19 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
     val goalsWithProgress: StateFlow<List<GoalWithProgress>> = _goalsWithProgress.asStateFlow()
 
     private var refreshJob: Job? = null
+    private var currentUserId: Int? = null
 
     fun loadGoalsWithProgress(userId: Int) {
+        // If user changed, clear state first
+        if (currentUserId != userId) {
+            _goalsWithProgress.value = emptyList()
+            currentUserId = userId
+        }
+
         viewModelScope.launch {
+            // Check for weekly reset
+            checkAndResetWeeklyGoals(userId)
+
             goalDao.getActiveGoals(userId).collect { goals ->
                 val weekStart = getWeekStartDate()
                 val goalsWithProgressList = goals.map { goal ->
@@ -52,12 +63,37 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private suspend fun checkAndResetWeeklyGoals(userId: Int) {
+        val currentWeekStart = getWeekStartDate()
+        val activeGoals = goalDao.getActiveGoals(userId).first()
+
+        // If goals exist but are from previous week, deactivate them
+        val needsReset = activeGoals.any { it.weekStartDate < currentWeekStart }
+
+        if (needsReset) {
+            // Deactivate old goals
+            goalDao.deactivateAllGoals(userId)
+
+            // Create new goals for current week with same targets
+            activeGoals.forEach { oldGoal ->
+                val newGoal = Goal(
+                    userId = userId,
+                    locationCategory = oldGoal.locationCategory,
+                    targetHours = oldGoal.targetHours,
+                    weekStartDate = currentWeekStart,
+                    isActive = true
+                )
+                goalDao.insertGoal(newGoal)
+            }
+        }
+    }
+
     fun startAutoRefresh(userId: Int) {
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
             while (isActive) {
                 loadGoalsWithProgress(userId)
-                delay(30000) // Refresh every 30 seconds instead of more frequently
+                delay(30000)
             }
         }
     }
@@ -83,6 +119,12 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
 
             loadGoalsWithProgress(userId)
         }
+    }
+
+    fun clearState() {
+        stopAutoRefresh()
+        _goalsWithProgress.value = emptyList()
+        currentUserId = null
     }
 
     fun insertDemoProgress(userId: Int) {

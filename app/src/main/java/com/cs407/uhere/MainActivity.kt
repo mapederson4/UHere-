@@ -17,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,17 +33,24 @@ import com.google.android.libraries.places.api.Places
 class MainActivity : ComponentActivity() {
     private val userViewModel: UserViewModel by viewModels()
     private val goalViewModel: GoalViewModel by viewModels()
-    private val locationViewModel: LocationViewModel by viewModels() // NEW
+    private val locationViewModel: LocationViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val apiKey  = applicationContext.packageManager
-            .getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-            .metaData
-            .getString("com.google.android.geo.API_KEY")
-        if(!Places.isInitialized()){
-            Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
+
+        try {
+            val apiKey = applicationContext.packageManager
+                .getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+                .metaData
+                ?.getString("com.google.android.geo.API_KEY")
+
+            if (apiKey != null && apiKey.isNotEmpty() && !Places.isInitialized()) {
+                Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to initialize Places API", e)
         }
+
         initializeBadges(this)
         enableEdgeToEdge()
         setContent {
@@ -52,7 +58,7 @@ class MainActivity : ComponentActivity() {
                 AppNavigation(
                     userViewModel = userViewModel,
                     goalViewModel = goalViewModel,
-                    locationViewModel = locationViewModel // NEW
+                    locationViewModel = locationViewModel
                 )
             }
         }
@@ -78,21 +84,25 @@ sealed class Screen(
 fun AppNavigation(
     userViewModel: UserViewModel,
     goalViewModel: GoalViewModel,
-    locationViewModel: LocationViewModel  // ADD THIS PARAMETER
+    locationViewModel: LocationViewModel
 ) {
     val navController = rememberNavController()
     val userState by userViewModel.userState.collectAsState()
     val items = listOf(Screen.Home, Screen.Goal, Screen.Maps, Screen.Reward, Screen.Settings)
 
-    // Navigate based on authentication state
+    LaunchedEffect(userState) {
+        if (userState == null) {
+            goalViewModel.clearState()
+            locationViewModel.clearState()
+        }
+    }
+
     LaunchedEffect(userState) {
         if (userState != null) {
-            // User is logged in, navigate to home
             navController.navigate(Screen.Home.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
         } else {
-            // User is logged out, navigate to login
             if (navController.currentDestination?.route != Screen.Login.route &&
                 navController.currentDestination?.route != Screen.SignUp.route) {
                 navController.navigate(Screen.Login.route) {
@@ -108,7 +118,6 @@ fun AppNavigation(
         navController = navController,
         startDestination = startDestination
     ) {
-        // Auth Screens (no bottom bar)
         composable(Screen.Login.route) {
             LoginScreen(
                 onLoginClick = { email, password ->
@@ -116,7 +125,6 @@ fun AppNavigation(
                         email = email,
                         password = password,
                         onSuccess = { firebaseUser ->
-                            // Save user to database
                             val user = com.cs407.uhere.data.User(
                                 firebaseUid = firebaseUser.uid,
                                 displayName = firebaseUser.displayName ?: "User",
@@ -125,7 +133,6 @@ fun AppNavigation(
                             userViewModel.setUser(user)
                         },
                         onError = { error ->
-                            // Show error (you can add a snackbar here)
                             println("Login error: $error")
                         }
                     )
@@ -143,7 +150,6 @@ fun AppNavigation(
                         email = email,
                         password = password,
                         onSuccess = { firebaseUser ->
-                            // Update display name
                             com.cs407.uhere.auth.updateDisplayName(name) { success, _ ->
                                 if (success) {
                                     val user = com.cs407.uhere.data.User(
@@ -168,7 +174,6 @@ fun AppNavigation(
             )
         }
 
-        // Main App Screens (with bottom bar)
         composable(Screen.Home.route) {
             Scaffold(
                 bottomBar = { BottomNavigationBar(navController, items) }
@@ -223,7 +228,8 @@ fun AppNavigation(
                     modifier = Modifier.padding(innerPadding),
                     userState = userState,
                     userViewModel = userViewModel,
-                    goalViewModel = goalViewModel
+                    goalViewModel = goalViewModel,
+                    locationViewModel = locationViewModel
                 )
             }
         }
