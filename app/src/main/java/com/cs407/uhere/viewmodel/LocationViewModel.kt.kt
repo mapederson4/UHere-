@@ -7,6 +7,7 @@ import com.cs407.uhere.data.LocationCategory
 import com.cs407.uhere.data.Place
 import com.cs407.uhere.data.UHereDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,16 +24,16 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     val isTrackingEnabled: StateFlow<Boolean> = _isTrackingEnabled.asStateFlow()
 
     private var currentUserId: Int? = null
+    private var loadJob: Job? = null
 
     fun loadUserPlaces(userId: Int) {
-        // If user changed, clear state first
         if (currentUserId != userId) {
-            _userPlaces.value = emptyList()
-            _isTrackingEnabled.value = false
+            loadJob?.cancel()
             currentUserId = userId
         }
 
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             placeDao.getUserPlaces(userId)
                 .flowOn(Dispatchers.IO)
                 .collect { places ->
@@ -73,6 +74,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun clearState() {
+        loadJob?.cancel()
         _userPlaces.value = emptyList()
         _isTrackingEnabled.value = false
         currentUserId = null

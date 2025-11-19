@@ -2,6 +2,7 @@ package com.cs407.uhere
 
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -119,8 +121,9 @@ fun AppNavigation(
         startDestination = startDestination
     ) {
         composable(Screen.Login.route) {
+            val context = LocalContext.current
             LoginScreen(
-                onLoginClick = { email, password ->
+                onLoginClick = { email, password, setLoading ->
                     com.cs407.uhere.auth.signIn(
                         email = email,
                         password = password,
@@ -133,7 +136,9 @@ fun AppNavigation(
                             userViewModel.setUser(user)
                         },
                         onError = { error ->
-                            println("Login error: $error")
+                            // Reset loading state so user can try again
+                            setLoading(false)
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
                     )
                 },
@@ -144,8 +149,9 @@ fun AppNavigation(
         }
 
         composable(Screen.SignUp.route) {
+            val context = LocalContext.current
             SignUpScreen(
-                onSignUpClick = { name, email, password ->
+                onSignUpClick = { name, email, password, setLoading ->
                     com.cs407.uhere.auth.createAccount(
                         email = email,
                         password = password,
@@ -158,11 +164,17 @@ fun AppNavigation(
                                         email = email
                                     )
                                     userViewModel.setUser(user)
+                                } else {
+                                    // Reset loading on display name update failure
+                                    setLoading(false)
+                                    Toast.makeText(context, "Failed to update display name", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
                         onError = { error ->
-                            println("Sign up error: $error")
+                            // Reset loading state so user can try again
+                            setLoading(false)
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
                     )
                 },

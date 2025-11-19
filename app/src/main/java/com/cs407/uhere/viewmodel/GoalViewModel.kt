@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.cs407.uhere.data.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 data class GoalWithProgress(
@@ -25,15 +24,17 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
 
     private var refreshJob: Job? = null
     private var currentUserId: Int? = null
+    private var loadJob: Job? = null
 
     fun loadGoalsWithProgress(userId: Int) {
-        // If user changed, clear state first
+        // Cancel previous load if user changed
         if (currentUserId != userId) {
-            _goalsWithProgress.value = emptyList()
+            loadJob?.cancel()
             currentUserId = userId
         }
 
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             // Check for weekly reset
             checkAndResetWeeklyGoals(userId)
 
@@ -67,14 +68,11 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
         val currentWeekStart = getWeekStartDate()
         val activeGoals = goalDao.getActiveGoals(userId).first()
 
-        // If goals exist but are from previous week, deactivate them
         val needsReset = activeGoals.any { it.weekStartDate < currentWeekStart }
 
         if (needsReset) {
-            // Deactivate old goals
             goalDao.deactivateAllGoals(userId)
 
-            // Create new goals for current week with same targets
             activeGoals.forEach { oldGoal ->
                 val newGoal = Goal(
                     userId = userId,
@@ -108,13 +106,15 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
             goalDao.deactivateAllGoals(userId)
 
             goals.forEach { (category, hours) ->
-                val goal = Goal(
-                    userId = userId,
-                    locationCategory = category,
-                    targetHours = hours,
-                    weekStartDate = weekStart
-                )
-                goalDao.insertGoal(goal)
+                if (hours > 0) {
+                    val goal = Goal(
+                        userId = userId,
+                        locationCategory = category,
+                        targetHours = hours,
+                        weekStartDate = weekStart
+                    )
+                    goalDao.insertGoal(goal)
+                }
             }
 
             loadGoalsWithProgress(userId)
@@ -123,6 +123,7 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearState() {
         stopAutoRefresh()
+        loadJob?.cancel()
         _goalsWithProgress.value = emptyList()
         currentUserId = null
     }
