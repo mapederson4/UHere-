@@ -44,9 +44,17 @@ fun HomeScreen(
     val coroutineScope = rememberCoroutineScope()
 
     // Load goals when user state changes
+    // Start auto-refresh when user state changes
     LaunchedEffect(userState) {
         userState?.let { user ->
-            goalViewModel.loadGoalsWithProgress(user.id)
+            goalViewModel.startAutoRefresh(user.id)
+        }
+    }
+
+    // Stop refresh when leaving screen
+    DisposableEffect(Unit) {
+        onDispose {
+            goalViewModel.stopAutoRefresh()
         }
     }
 

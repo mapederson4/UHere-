@@ -17,7 +17,9 @@ interface LocationDao {
     @Update
     suspend fun updateSession(session: LocationSession)
 
-    // **NEW: Clear sessions for demo testing**
+    @Query("SELECT * FROM location_sessions WHERE id = :sessionId")
+    suspend fun getSessionById(sessionId: Int): LocationSession?
+
     @Query("DELETE FROM location_sessions WHERE userId = :userId AND weekStartDate = :weekStart")
     suspend fun clearSessionsForWeek(userId: Int, weekStart: Long)
 }

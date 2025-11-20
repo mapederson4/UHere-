@@ -9,14 +9,12 @@ val localProperties = Properties().apply {
 
 val openAiKey: String = localProperties.getProperty("OPENAI_API_KEY") ?: ""
 
+
 plugins {
 
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
-
-
-
 
     //add plugins for firebase
     id("com.google.devtools.ksp")
@@ -40,6 +38,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY", "")
 
         buildConfigField(
             "String",
@@ -200,6 +199,19 @@ dependencies {
 
     // Accompanist Permissions (for location permissions)
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
+
+    //location services
+    // Google Play Services - Location & Maps
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:4.3.0")
+    implementation("com.google.android.libraries.places:places:3.5.0")
+
+    // For geofencing (optional but recommended)
+    implementation("com.google.android.gms:play-services-places:17.0.0")
+
+    // WorkManager for background location tracking
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Testing
     testImplementation(libs.junit)

@@ -19,13 +19,11 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     val userState: StateFlow<User?> = _userState.asStateFlow()
 
     init {
-        // Listen for auth state changes
         auth.addAuthStateListener { firebaseAuth ->
             val firebaseUser = firebaseAuth.currentUser
             if (firebaseUser == null) {
                 _userState.value = null
             } else {
-                // Load user from database
                 loadUser(firebaseUser.uid)
             }
         }
@@ -35,13 +33,26 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val user = userDao.getUserByFirebaseUid(firebaseUid)
             _userState.value = user
+            android.util.Log.d("UserViewModel", "Loaded user: id=${user?.id}, uid=${user?.firebaseUid}")
         }
     }
 
     fun setUser(user: User) {
         viewModelScope.launch {
-            userDao.insertUser(user)
-            _userState.value = user
+            // Check if user already exists
+            val existingUser = userDao.getUserByFirebaseUid(user.firebaseUid)
+
+            if (existingUser != null) {
+                // User exists, use existing ID
+                android.util.Log.d("UserViewModel", "User exists: id=${existingUser.id}")
+                _userState.value = existingUser
+            } else {
+                // New user, insert
+                val newUserId = userDao.insertUser(user)
+                val insertedUser = user.copy(id = newUserId.toInt())
+                android.util.Log.d("UserViewModel", "New user created: id=${insertedUser.id}")
+                _userState.value = insertedUser
+            }
         }
     }
 

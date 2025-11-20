@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.cs407.uhere" />
+                  <option name="mobileSdkAppId" value="1:433424956844:android:98f241ad04c8bfd3ba4e09" />
+                  <option name="projectId" value="uhere-71486" />
+                  <option name="projectNumber" value="433424956844" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

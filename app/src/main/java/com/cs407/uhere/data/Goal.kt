@@ -15,13 +15,6 @@ data class Goal(
     val isActive: Boolean = true
 )
 
-// TODO: Change in the future
-enum class LocationCategory {
-    LIBRARY,
-    BAR,
-    GYM
-}
-
 fun getWeekStartDate(): Long {
     val calendar = Calendar.getInstance()
     calendar.firstDayOfWeek = Calendar.SUNDAY
