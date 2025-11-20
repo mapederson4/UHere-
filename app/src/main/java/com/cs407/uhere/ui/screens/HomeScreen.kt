@@ -243,8 +243,6 @@ fun buildPromptFromGoals(
 suspend fun callOpenAI(prompt: String): String = withContext(Dispatchers.IO) {
     val apiKey = BuildConfig.OPENAI_API_KEY
 
-    print(apiKey)
-
     val mediaType = "application/json; charset=utf-8".toMediaType()
 
     val root = JSONObject().apply {
