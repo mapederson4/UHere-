@@ -22,19 +22,25 @@ data class Reward(
     val id: Int,
     val drawableRes: Int,
     val name: String = "",
-    val description: String = ""
+    val description: String = "",
+    val isUnlocked: Boolean = false
 )
 
 @Composable
 fun RewardScreen(modifier: Modifier = Modifier) {
     // Replace these with your actual drawable resource IDs
     val rewards = listOf(
-        Reward(1, R.drawable.reward, "Reward 1", "This is the first reward"),
-        Reward(2, R.drawable.reward, "Reward 2", "This is the second reward"),
-        Reward(3, R.drawable.reward, "Reward 3", "This is the third reward"),
-        Reward(4, R.drawable.reward, "Reward 4", "This is the fourth reward"),
-        Reward(5, R.drawable.reward, "Reward 5", "This is the fifth reward"),
-        Reward(6, R.drawable.reward, "Reward 6", "This is the sixth reward"),
+        Reward(1, R.drawable.bar1, "Bar 1", "Meet bar goals once", true),
+        Reward(2, R.drawable.bar2, "Bar 2", "Meet bar goals three times", true),
+        Reward(3, R.drawable.bar3, "Bar 3", "Meet bar goals three weeks consecutively", false),
+
+        Reward(4, R.drawable.gym1, "Gym 1", "Meet gym goals once", true),
+        Reward(5, R.drawable.gym2, "Gym 2", "Meet gym goals three times", false),
+        Reward(6, R.drawable.gym3, "Gym 3", "Meet gym goals three weeks consecutively", false),
+
+        Reward(7, R.drawable.library1, "Library 1", "Meet library goals once", true),
+        Reward(8, R.drawable.library2, "Library 2", "Meet library goals three times", true),
+        Reward(9, R.drawable.library3, "Library 3", "Meet library goals three weeks consecutively", true),
     )
 
     Column(
@@ -94,15 +100,29 @@ fun FlippableRewardCard(reward: Reward) {
             contentAlignment = Alignment.Center
         ) {
             if (rotation <= 90f) {
-                // Front side
-                Image(
-                    painter = painterResource(id = reward.drawableRes),
-                    contentDescription = reward.name,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentScale = ContentScale.Fit
-                )
+                // if unlocked show normal front side, if not show locked placeholder
+                if (reward.isUnlocked){
+                    // Front side
+                    Image(
+                        painter = painterResource(id = reward.drawableRes),
+                        contentDescription = reward.name,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    // show a locked placeholder
+                    Image(
+                        painter = painterResource(id = R.drawable.locked),
+                        contentDescription = reward.name,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+
             } else {
                 // Back side
                 Column(
