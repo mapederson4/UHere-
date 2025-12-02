@@ -7,6 +7,7 @@ import com.cs407.uhere.data.LocationCategory
 import com.cs407.uhere.data.Place
 import com.cs407.uhere.data.UHereDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,13 +23,20 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     private val _isTrackingEnabled = MutableStateFlow(false)
     val isTrackingEnabled: StateFlow<Boolean> = _isTrackingEnabled.asStateFlow()
 
+    private var currentUserId: Int? = null
+    private var loadJob: Job? = null
+
     fun loadUserPlaces(userId: Int) {
-        viewModelScope.launch {
-            // flowOn ensures DB query runs on IO thread
+        if (currentUserId != userId) {
+            loadJob?.cancel()
+            currentUserId = userId
+        }
+
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             placeDao.getUserPlaces(userId)
                 .flowOn(Dispatchers.IO)
                 .collect { places ->
-                    // Collection happens on Main, but query was on IO
                     _userPlaces.value = places
                 }
         }
@@ -42,7 +50,7 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
         category: LocationCategory,
         radius: Double = 100.0
     ) {
-        viewModelScope.launch(Dispatchers.IO) {  // DB write on IO thread
+        viewModelScope.launch(Dispatchers.IO) {
             val place = Place(
                 name = name,
                 latitude = latitude,
@@ -56,12 +64,19 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deletePlace(place: Place) {
-        viewModelScope.launch(Dispatchers.IO) {  // DB delete on IO thread
+        viewModelScope.launch(Dispatchers.IO) {
             placeDao.deletePlace(place)
         }
     }
 
     fun setTrackingEnabled(enabled: Boolean) {
         _isTrackingEnabled.value = enabled
+    }
+
+    fun clearState() {
+        loadJob?.cancel()
+        _userPlaces.value = emptyList()
+        _isTrackingEnabled.value = false
+        currentUserId = null
     }
 }

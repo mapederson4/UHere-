@@ -5,19 +5,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.cs407.uhere.data.User
+import com.cs407.uhere.service.LocationTrackingService
 import com.cs407.uhere.viewmodel.UserViewModel
 import com.cs407.uhere.viewmodel.GoalViewModel
+import com.cs407.uhere.viewmodel.LocationViewModel
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     userState: User?,
     userViewModel: UserViewModel,
-    goalViewModel: GoalViewModel // Add this parameter
+    goalViewModel: GoalViewModel,
+    locationViewModel: LocationViewModel
 ) {
-    var tracking by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val isTracking by locationViewModel.isTrackingEnabled.collectAsState()
     var showDemoMessage by remember { mutableStateOf(false) }
 
     Box(
@@ -30,7 +35,6 @@ fun SettingsScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // User Info Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -47,7 +51,6 @@ fun SettingsScreen(
                 }
             }
 
-            // Location Tracking Toggle
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -62,16 +65,22 @@ fun SettingsScreen(
                 ) {
                     Text("Location Tracking")
                     Switch(
-                        checked = tracking,
+                        checked = isTracking,
                         onCheckedChange = { newValue ->
-                            tracking = newValue
-                            // TODO: Implement location tracking service start/stop
+                            userState?.let { user ->
+                                if (newValue) {
+                                    LocationTrackingService.start(context, user.id)
+                                    locationViewModel.setTrackingEnabled(true)
+                                } else {
+                                    LocationTrackingService.stop(context)
+                                    locationViewModel.setTrackingEnabled(false)
+                                }
+                            }
                         }
                     )
                 }
             }
 
-            // **DEMO DATA CARD**
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -126,9 +135,13 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Logout Button
             Button(
-                onClick = { userViewModel.logout() },
+                onClick = {
+                    // Stop location tracking before logout
+                    LocationTrackingService.stop(context)
+                    locationViewModel.setTrackingEnabled(false)
+                    userViewModel.logout()
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -140,7 +153,6 @@ fun SettingsScreen(
             }
         }
 
-        // Show snackbar message
         if (showDemoMessage) {
             LaunchedEffect(Unit) {
                 kotlinx.coroutines.delay(2000)

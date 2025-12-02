@@ -2,6 +2,7 @@ package com.cs407.uhere
 
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,17 +35,24 @@ import com.google.android.libraries.places.api.Places
 class MainActivity : ComponentActivity() {
     private val userViewModel: UserViewModel by viewModels()
     private val goalViewModel: GoalViewModel by viewModels()
-    private val locationViewModel: LocationViewModel by viewModels() // NEW
+    private val locationViewModel: LocationViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val apiKey  = applicationContext.packageManager
-            .getApplicationInfo(packageName, PackageManager.GET_META_DATA)
-            .metaData
-            .getString("com.google.android.geo.API_KEY")
-        if(!Places.isInitialized()){
-            Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
+
+        try {
+            val apiKey = applicationContext.packageManager
+                .getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+                .metaData
+                ?.getString("com.google.android.geo.API_KEY")
+
+            if (apiKey != null && apiKey.isNotEmpty() && !Places.isInitialized()) {
+                Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Failed to initialize Places API", e)
         }
+
         initializeBadges(this)
         enableEdgeToEdge()
         setContent {
@@ -52,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 AppNavigation(
                     userViewModel = userViewModel,
                     goalViewModel = goalViewModel,
-                    locationViewModel = locationViewModel // NEW
+                    locationViewModel = locationViewModel
                 )
             }
         }
@@ -78,21 +86,25 @@ sealed class Screen(
 fun AppNavigation(
     userViewModel: UserViewModel,
     goalViewModel: GoalViewModel,
-    locationViewModel: LocationViewModel  // ADD THIS PARAMETER
+    locationViewModel: LocationViewModel
 ) {
     val navController = rememberNavController()
     val userState by userViewModel.userState.collectAsState()
     val items = listOf(Screen.Home, Screen.Goal, Screen.Maps, Screen.Reward, Screen.Settings)
 
-    // Navigate based on authentication state
+    LaunchedEffect(userState) {
+        if (userState == null) {
+            goalViewModel.clearState()
+            locationViewModel.clearState()
+        }
+    }
+
     LaunchedEffect(userState) {
         if (userState != null) {
-            // User is logged in, navigate to home
             navController.navigate(Screen.Home.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
         } else {
-            // User is logged out, navigate to login
             if (navController.currentDestination?.route != Screen.Login.route &&
                 navController.currentDestination?.route != Screen.SignUp.route) {
                 navController.navigate(Screen.Login.route) {
@@ -108,15 +120,14 @@ fun AppNavigation(
         navController = navController,
         startDestination = startDestination
     ) {
-        // Auth Screens (no bottom bar)
         composable(Screen.Login.route) {
+            val context = LocalContext.current
             LoginScreen(
-                onLoginClick = { email, password ->
+                onLoginClick = { email, password, setLoading ->
                     com.cs407.uhere.auth.signIn(
                         email = email,
                         password = password,
                         onSuccess = { firebaseUser ->
-                            // Save user to database
                             val user = com.cs407.uhere.data.User(
                                 firebaseUid = firebaseUser.uid,
                                 displayName = firebaseUser.displayName ?: "User",
@@ -125,8 +136,9 @@ fun AppNavigation(
                             userViewModel.setUser(user)
                         },
                         onError = { error ->
-                            // Show error (you can add a snackbar here)
-                            println("Login error: $error")
+                            // Reset loading state so user can try again
+                            setLoading(false)
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
                     )
                 },
@@ -137,13 +149,13 @@ fun AppNavigation(
         }
 
         composable(Screen.SignUp.route) {
+            val context = LocalContext.current
             SignUpScreen(
-                onSignUpClick = { name, email, password ->
+                onSignUpClick = { name, email, password, setLoading ->
                     com.cs407.uhere.auth.createAccount(
                         email = email,
                         password = password,
                         onSuccess = { firebaseUser ->
-                            // Update display name
                             com.cs407.uhere.auth.updateDisplayName(name) { success, _ ->
                                 if (success) {
                                     val user = com.cs407.uhere.data.User(
@@ -152,11 +164,17 @@ fun AppNavigation(
                                         email = email
                                     )
                                     userViewModel.setUser(user)
+                                } else {
+                                    // Reset loading on display name update failure
+                                    setLoading(false)
+                                    Toast.makeText(context, "Failed to update display name", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
                         onError = { error ->
-                            println("Sign up error: $error")
+                            // Reset loading state so user can try again
+                            setLoading(false)
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
                     )
                 },
@@ -168,7 +186,6 @@ fun AppNavigation(
             )
         }
 
-        // Main App Screens (with bottom bar)
         composable(Screen.Home.route) {
             Scaffold(
                 bottomBar = { BottomNavigationBar(navController, items) }
@@ -223,7 +240,8 @@ fun AppNavigation(
                     modifier = Modifier.padding(innerPadding),
                     userState = userState,
                     userViewModel = userViewModel,
-                    goalViewModel = goalViewModel
+                    goalViewModel = goalViewModel,
+                    locationViewModel = locationViewModel
                 )
             }
         }

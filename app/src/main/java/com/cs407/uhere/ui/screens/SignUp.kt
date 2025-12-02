@@ -1,5 +1,6 @@
 package com.cs407.uhere.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -13,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,23 +27,29 @@ import androidx.compose.ui.unit.dp
 @Preview
 @Composable
 fun SignUpScreen(
-    onSignUpClick: (String, String, String) -> Unit = { _, _, _ -> },
+    onSignUpClick: (String, String, String, (Boolean) -> Unit) -> Unit = { _, _, _, _ -> },
     onLoginClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
 
+    val passwordsMatch = password == confirmPassword || confirmPassword.isEmpty()
     val isFormValid = name.isNotEmpty() &&
             email.isNotEmpty() &&
+            android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() &&
             password.isNotEmpty() &&
+            password.length >= 6 &&
             confirmPassword.isNotEmpty() &&
-            password == confirmPassword
+            passwordsMatch
 
     Column(
         modifier = Modifier
@@ -50,7 +59,6 @@ fun SignUpScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // App Title
         Text(
             text = "Create Account",
             style = MaterialTheme.typography.displayMedium,
@@ -58,12 +66,20 @@ fun SignUpScreen(
             modifier = Modifier.padding(bottom = 48.dp)
         )
 
-        // Name Field
+        ErrorDisplay(
+            errorMessage = errorMessage,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = {
+                name = it
+                errorMessage = null
+            },
             label = { Text("Full Name") },
             singleLine = true,
+            enabled = !isLoading,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Next
@@ -71,17 +87,29 @@ fun SignUpScreen(
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             ),
+            isError = name.isEmpty() && email.isNotEmpty(),
+            supportingText = {
+                if (name.isEmpty() && email.isNotEmpty()) {
+                    Text(
+                        "Name is required",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 8.dp)
         )
 
-        // Email Field
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = {
+                email = it
+                errorMessage = null
+            },
             label = { Text("Email") },
             singleLine = true,
+            enabled = !isLoading,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
@@ -89,17 +117,29 @@ fun SignUpScreen(
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             ),
+            isError = email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches(),
+            supportingText = {
+                if (email.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    Text(
+                        "Please enter a valid email address",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 8.dp)
         )
 
-        // Password Field
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = {
+                password = it
+                errorMessage = null
+            },
             label = { Text("Password") },
             singleLine = true,
+            enabled = !isLoading,
             visualTransformation = if (passwordVisible)
                 VisualTransformation.None
             else
@@ -125,17 +165,34 @@ fun SignUpScreen(
                     )
                 }
             },
+            isError = password.isNotEmpty() && password.length < 6,
+            supportingText = {
+                if (password.isNotEmpty() && password.length < 6) {
+                    Text(
+                        "Password must be at least 6 characters",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                } else if (password.isEmpty() && confirmPassword.isNotEmpty()) {
+                    Text(
+                        "Password is required",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 8.dp)
         )
 
-        // Confirm Password Field
         OutlinedTextField(
             value = confirmPassword,
-            onValueChange = { confirmPassword = it },
+            onValueChange = {
+                confirmPassword = it
+                errorMessage = null
+            },
             label = { Text("Confirm Password") },
             singleLine = true,
+            enabled = !isLoading,
             visualTransformation = if (confirmPasswordVisible)
                 VisualTransformation.None
             else
@@ -148,7 +205,10 @@ fun SignUpScreen(
                 onDone = {
                     focusManager.clearFocus()
                     if (isFormValid) {
-                        onSignUpClick(name, email, password)
+                        isLoading = true
+                        onSignUpClick(name, email, password) { loading ->
+                            isLoading = loading
+                        }
                     }
                 }
             ),
@@ -166,31 +226,56 @@ fun SignUpScreen(
                     )
                 }
             },
-            isError = confirmPassword.isNotEmpty() && password != confirmPassword,
+            isError = confirmPassword.isNotEmpty() && !passwordsMatch,
             supportingText = {
-                if (confirmPassword.isNotEmpty() && password != confirmPassword) {
-                    Text("Passwords do not match")
+                if (confirmPassword.isNotEmpty() && !passwordsMatch) {
+                    Text(
+                        "Passwords do not match",
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 24.dp)
+                .padding(bottom = 16.dp)
         )
 
-        // Sign Up Button
         Button(
-            onClick = { onSignUpClick(name, email, password) },
-            enabled = isFormValid,
+            onClick = {
+                when {
+                    name.isEmpty() -> errorMessage = "Name cannot be empty"
+                    email.isEmpty() -> errorMessage = "Email cannot be empty"
+                    !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
+                        errorMessage = "Please enter a valid email address"
+                    password.isEmpty() -> errorMessage = "Password cannot be empty"
+                    password.length < 6 -> errorMessage = "Password must be at least 6 characters"
+                    confirmPassword.isEmpty() -> errorMessage = "Please confirm your password"
+                    !passwordsMatch -> errorMessage = "Passwords do not match"
+                    else -> {
+                        isLoading = true
+                        onSignUpClick(name, email, password) { loading ->
+                            isLoading = loading
+                        }
+                    }
+                }
+            },
+            enabled = !isLoading && isFormValid,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            Text("Sign Up", style = MaterialTheme.typography.bodyLarge)
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Sign Up", style = MaterialTheme.typography.bodyLarge)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Login Section
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -198,7 +283,10 @@ fun SignUpScreen(
                 text = "Already have an account?",
                 style = MaterialTheme.typography.bodyMedium
             )
-            TextButton(onClick = onLoginClick) {
+            TextButton(
+                onClick = onLoginClick,
+                enabled = !isLoading
+            ) {
                 Text("Login")
             }
         }
