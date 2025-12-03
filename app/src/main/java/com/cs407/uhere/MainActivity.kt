@@ -25,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.cs407.uhere.data.initializeBadges
+import com.cs407.uhere.data.WeeklyProgressManager
 import com.cs407.uhere.ui.screens.*
 import com.cs407.uhere.ui.theme.UHereTheme
 import com.cs407.uhere.viewmodel.GoalViewModel
@@ -92,6 +93,10 @@ fun AppNavigation(
     val userState by userViewModel.userState.collectAsState()
     val items = listOf(Screen.Home, Screen.Goal, Screen.Maps, Screen.Reward, Screen.Settings)
 
+    // CREATE WeeklyProgressManager instance - this is the key addition
+    val context = LocalContext.current
+    val weeklyProgressManager = remember { WeeklyProgressManager(context) }
+
     LaunchedEffect(userState) {
         if (userState == null) {
             goalViewModel.clearState()
@@ -136,7 +141,6 @@ fun AppNavigation(
                             userViewModel.setUser(user)
                         },
                         onError = { error ->
-                            // Reset loading state so user can try again
                             setLoading(false)
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
@@ -165,14 +169,12 @@ fun AppNavigation(
                                     )
                                     userViewModel.setUser(user)
                                 } else {
-                                    // Reset loading on display name update failure
                                     setLoading(false)
                                     Toast.makeText(context, "Failed to update display name", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         },
                         onError = { error ->
-                            // Reset loading state so user can try again
                             setLoading(false)
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                         }
@@ -226,8 +228,11 @@ fun AppNavigation(
             Scaffold(
                 bottomBar = { BottomNavigationBar(navController, items) }
             ) { innerPadding ->
+                // UPDATED: Pass userId and weeklyProgressManager to RewardScreen
                 RewardScreen(
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier.padding(innerPadding),
+                    userId = userState?.id,
+                    weeklyProgressManager = weeklyProgressManager
                 )
             }
         }
