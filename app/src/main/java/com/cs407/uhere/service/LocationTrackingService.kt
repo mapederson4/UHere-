@@ -169,7 +169,7 @@ class LocationTrackingService : Service() {
         }
 
         if (currentPlace != null) {
-            android.util.Log.d("LocationService", "✓ INSIDE: ${currentPlace.name} (${currentPlace.category})")
+            android.util.Log.d("LocationService", "INSIDE: ${currentPlace.name} (${currentPlace.category})")
 
             if (currentCategory != currentPlace.category) {
                 android.util.Log.d("LocationService", "Category changed from $currentCategory to ${currentPlace.category}")
@@ -182,7 +182,7 @@ class LocationTrackingService : Service() {
                 }
             }
         } else {
-            android.util.Log.d("LocationService", "✗ NOT at any place")
+            android.util.Log.d("LocationService", "NOT at any place")
             if (currentSessionId != null) {
                 endCurrentSession(locationDao)
             }
@@ -191,7 +191,7 @@ class LocationTrackingService : Service() {
 
     private fun sendCheckInNotification(category: LocationCategory) {
         try {
-            android.util.Log.d("LocationService", "🔔 Sending check-in notification for $category")
+            android.util.Log.d("LocationService", "Sending check-in notification for $category")
 
             // Create channel every time like the working app
             createNotificationChannels()
@@ -228,10 +228,10 @@ class LocationTrackingService : Service() {
             val notificationId = 1000 + category.ordinal
             notificationManager.notify(notificationId, builder.build())
 
-            android.util.Log.d("LocationService", "✓ Notification posted with ID: $notificationId")
+            android.util.Log.d("LocationService", "Notification posted with ID: $notificationId")
 
         } catch (e: Exception) {
-            android.util.Log.e("LocationService", "❌ Error sending notification", e)
+            android.util.Log.e("LocationService", "Error sending notification", e)
             e.printStackTrace()
         }
     }
