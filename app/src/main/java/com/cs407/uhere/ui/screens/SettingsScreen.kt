@@ -1,5 +1,9 @@
 package com.cs407.uhere.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.cs407.uhere.data.User
 import com.cs407.uhere.data.WeeklyProgressManager
 import com.cs407.uhere.service.LocationTrackingService
@@ -38,6 +43,32 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val isTracking by locationViewModel.isTrackingEnabled.collectAsState()
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+
+        val fine = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarse = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+        if (fine || coarse) {
+            // Permission granted → NOW start tracking
+            userState?.let { user ->
+                LocationTrackingService.start(context, user.id)
+                locationViewModel.setTrackingEnabled(true)
+            }
+        } else {
+            // Permission denied → do nothing
+            locationViewModel.setTrackingEnabled(false)
+        }
+    }
     var showDemoMessage by remember { mutableStateOf(false) }
     var showWeekMessage by remember { mutableStateOf("") }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -207,8 +238,21 @@ fun SettingsScreen(
                         onCheckedChange = { newValue ->
                             userState?.let { user ->
                                 if (newValue) {
-                                    LocationTrackingService.start(context, user.id)
-                                    locationViewModel.setTrackingEnabled(true)
+                                    if (!hasLocationPermission) {
+                                        // Ask for permission first
+                                        permissionLauncher.launch(
+                                            arrayOf(
+                                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                                Manifest.permission.ACCESS_COARSE_LOCATION
+                                            )
+                                        )
+                                    }else {
+                                        // Already granted → safe to start
+                                        userState?.let { user ->
+                                            LocationTrackingService.start(context, user.id)
+                                            locationViewModel.setTrackingEnabled(true)
+                                        }
+                                    }
                                 } else {
                                     LocationTrackingService.stop(context)
                                     locationViewModel.setTrackingEnabled(false)
