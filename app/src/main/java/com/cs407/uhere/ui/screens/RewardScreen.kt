@@ -13,12 +13,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -28,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cs407.uhere.R
+import com.cs407.uhere.data.*
+import kotlinx.coroutines.launch
 
 data class Reward(
     val id: Int,
@@ -38,16 +41,30 @@ data class Reward(
 )
 
 @Composable
-fun RewardScreen(modifier: Modifier = Modifier) {
+fun RewardScreen(
+    modifier: Modifier = Modifier,
+    userId: Int?,
+    weeklyProgressManager: WeeklyProgressManager
+) {
+    var streakInfo by remember { mutableStateOf<Map<String, StreakInfo>?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Load streak information
+    LaunchedEffect(userId) {
+        userId?.let {
+            coroutineScope.launch {
+                streakInfo = weeklyProgressManager.getAllStreaks(it)
+            }
+        }
+    }
+
     val rewards = listOf(
         Reward(1, R.drawable.bar1, "Social Butterfly", "Meet bar goals once", true),
         Reward(2, R.drawable.bar2, "Party Expert", "Meet bar goals three times", true),
         Reward(3, R.drawable.bar3, "Social Legend", "Meet bar goals three weeks consecutively", false),
-
         Reward(4, R.drawable.gym1, "Fitness Starter", "Meet gym goals once", true),
         Reward(5, R.drawable.gym2, "Gym Regular", "Meet gym goals three times", false),
         Reward(6, R.drawable.gym3, "Fitness Champion", "Meet gym goals three weeks consecutively", false),
-
         Reward(7, R.drawable.library1, "Study Beginner", "Meet library goals once", true),
         Reward(8, R.drawable.library2, "Dedicated Scholar", "Meet library goals three times", true),
         Reward(9, R.drawable.library3, "Academic Master", "Meet library goals three weeks consecutively", true),
@@ -61,6 +78,7 @@ fun RewardScreen(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
     ) {
         // Beautiful Header with Gradient
         Box(
@@ -98,7 +116,7 @@ fun RewardScreen(modifier: Modifier = Modifier) {
                     )
                 }
                 Text(
-                    text = "Unlock badges by reaching your goals",
+                    text = "Track your streaks and unlock badges",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.85f),
                     modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
@@ -157,16 +175,245 @@ fun RewardScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        // Rewards Grid
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(16.dp)
+        // Streaks Section
+        Column(
+            modifier = Modifier.padding(16.dp)
         ) {
-            items(rewards) { reward ->
-                FlippableRewardCard(reward = reward)
+            Text(
+                text = "🔥 Your Streaks",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            streakInfo?.let { streaks ->
+                // All Goals Streak (most prominent)
+                streaks["all_goals"]?.let { allGoalsStreak ->
+                    StreakCard(
+                        title = "All Goals Complete",
+                        icon = Icons.Default.EmojiEvents,
+                        iconColor = Color(0xFFFFD700),
+                        streakInfo = allGoalsStreak,
+                        isPrimary = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Individual category streaks
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    streaks["library"]?.let { libraryStreak ->
+                        CategoryStreakCard(
+                            title = "Library",
+                            iconRes = R.drawable.book,
+                            streakInfo = libraryStreak,
+                            color = Color(0xFF1E88E5),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    streaks["gym"]?.let { gymStreak ->
+                        CategoryStreakCard(
+                            title = "Gym",
+                            iconRes = R.drawable.barbell,
+                            streakInfo = gymStreak,
+                            color = Color(0xFF43A047),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    streaks["bar"]?.let { barStreak ->
+                        CategoryStreakCard(
+                            title = "Bar",
+                            iconRes = R.drawable.drink,
+                            streakInfo = barStreak,
+                            color = Color(0xFFFB8C00),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            } ?: run {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Text(
+                        text = "Complete your first goal to start tracking streaks!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
+        }
+
+        // Rewards Grid Section
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text(
+                text = "🏆 Collectible Badges",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.height(600.dp),
+                userScrollEnabled = false
+            ) {
+                items(rewards) { reward ->
+                    FlippableRewardCard(reward = reward)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StreakCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: Color,
+    streakInfo: StreakInfo,
+    isPrimary: Boolean = false
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isPrimary) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = iconColor,
+                    modifier = Modifier.size(32.dp)
+                )
+
+                Column {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "${streakInfo.totalWeeksCompleted} weeks completed",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocalFireDepartment,
+                        contentDescription = "Streak",
+                        tint = Color(0xFFFF6B35),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = "${streakInfo.currentStreak}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF6B35)
+                    )
+                }
+                Text(
+                    text = "Best: ${streakInfo.bestStreak}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CategoryStreakCard(
+    title: String,
+    iconRes: Int,
+    streakInfo: StreakInfo,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.1f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Image(
+                painter = painterResource(iconRes),
+                contentDescription = title,
+                modifier = Modifier.size(32.dp),
+                contentScale = ContentScale.Fit
+            )
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LocalFireDepartment,
+                    contentDescription = "Streak",
+                    tint = Color(0xFFFF6B35),
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "${streakInfo.currentStreak}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+            }
+
+            Text(
+                text = "Best: ${streakInfo.bestStreak}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -231,13 +478,13 @@ fun FlippableRewardCard(reward: Reward) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.locked),
+                            Icon(
+                                imageVector = Icons.Default.Star,
                                 contentDescription = "Locked",
                                 modifier = Modifier
                                     .size(48.dp)
                                     .padding(bottom = 8.dp),
-                                contentScale = ContentScale.Fit
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
                             Text(
                                 text = "Locked",
