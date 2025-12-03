@@ -15,9 +15,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         LocationSession::class,
         Badge::class,
         UserBadge::class,
-        Place::class
+        Place::class,
+        WeeklyProgress::class  // ADDED
     ],
-    version = 3,
+    version = 4,  // UPDATED from 3 to 4
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -27,6 +28,7 @@ abstract class UHereDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao
     abstract fun badgeDao(): BadgeDao
     abstract fun placeDao(): PlaceDao
+    abstract fun weeklyProgressDao(): WeeklyProgressDao  // ADDED
 
     companion object {
         @Volatile
@@ -51,19 +53,36 @@ abstract class UHereDatabase : RoomDatabase() {
 
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Add weekStartDate column if it doesn't exist
                 try {
                     database.execSQL("ALTER TABLE goals ADD COLUMN weekStartDate INTEGER NOT NULL DEFAULT 0")
                 } catch (e: Exception) {
                     // Column might already exist, ignore
                 }
 
-                // Add isActive column if it doesn't exist
                 try {
                     database.execSQL("ALTER TABLE goals ADD COLUMN isActive INTEGER NOT NULL DEFAULT 1")
                 } catch (e: Exception) {
                     // Column might already exist, ignore
                 }
+            }
+        }
+
+        // ADDED: Migration for WeeklyProgress table
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS weekly_progress (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        userId INTEGER NOT NULL,
+                        weekStartDate INTEGER NOT NULL,
+                        weekEndDate INTEGER NOT NULL,
+                        libraryCompleted INTEGER NOT NULL DEFAULT 0,
+                        barCompleted INTEGER NOT NULL DEFAULT 0,
+                        gymCompleted INTEGER NOT NULL DEFAULT 0,
+                        allGoalsCompleted INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL
+                    )
+                """)
             }
         }
 
@@ -74,7 +93,7 @@ abstract class UHereDatabase : RoomDatabase() {
                     UHereDatabase::class.java,
                     "uhere_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)  // ADDED MIGRATION_3_4
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
