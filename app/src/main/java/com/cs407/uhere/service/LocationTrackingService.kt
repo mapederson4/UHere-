@@ -42,6 +42,7 @@ class LocationTrackingService : Service() {
 
     companion object {
         const val CHANNEL_ID = "location_tracking_channel"
+        const val CHECKIN_CHANNEL_ID = "checkin_notification_channel"  // Add this line
         const val NOTIFICATION_ID = 1
         const val EXTRA_USER_ID = "user_id"
 
@@ -60,6 +61,121 @@ class LocationTrackingService : Service() {
         fun stop(context: Context) {
             android.util.Log.d("LocationService", "Stopping service")
             context.stopService(Intent(context, LocationTrackingService::class.java))
+        }
+    }
+    // This now runs entirely on IO dispatcher
+    private suspend fun handleLocationUpdate(location: Location) {
+        android.util.Log.d("LocationService", "=== LOCATION UPDATE ===")
+        android.util.Log.d("LocationService", "Current location: ${location.latitude}, ${location.longitude}")
+        android.util.Log.d("LocationService", "Accuracy: ${location.accuracy}m")
+        android.util.Log.d("LocationService", "UserId: $userId")
+
+        // Update cache if needed
+        val now = System.currentTimeMillis()
+        if (now - lastCacheUpdate > CACHE_DURATION) {
+            updatePlacesCache()
+        }
+
+        val database = UHereDatabase.getDatabase(applicationContext)
+        val locationDao = database.locationDao()
+
+        val places = cachedPlaces
+        android.util.Log.d("LocationService", "Checking ${places.size} places (from cache)")
+
+        if (places.isEmpty()) {
+            android.util.Log.w("LocationService", "No places found for this user!")
+        }
+
+        val currentPlace = places.firstOrNull { place ->
+            val distance = calculateDistance(
+                location.latitude, location.longitude,
+                place.latitude, place.longitude
+            )
+            android.util.Log.d("LocationService", "Distance to '${place.name}': ${distance.toInt()}m (needs < ${place.radius.toInt()}m)")
+            distance <= place.radius
+        }
+
+        if (currentPlace != null) {
+            android.util.Log.d("LocationService", "✓ INSIDE: ${currentPlace.name} (${currentPlace.category})")
+            android.util.Log.d("LocationService", "Current category: $currentCategory, New category: ${currentPlace.category}")
+
+            if (currentCategory != currentPlace.category) {
+                android.util.Log.d("LocationService", "Category changed from $currentCategory to ${currentPlace.category}")
+                endCurrentSession(locationDao)
+                startNewSession(currentPlace.category, locationDao)
+
+                // CRITICAL: Send notification on Main thread
+                withContext(Dispatchers.Main) {
+                    sendCheckInNotification(currentPlace.category)
+                }
+            } else {
+                android.util.Log.d("LocationService", "Already tracking ${currentPlace.category}")
+            }
+        } else {
+            android.util.Log.d("LocationService", "✗ NOT at any place")
+            if (currentSessionId != null) {
+                android.util.Log.d("LocationService", "Ending current session")
+                endCurrentSession(locationDao)
+            }
+        }
+    }
+
+    private fun sendCheckInNotification(category: LocationCategory) {
+        try {
+            android.util.Log.d("LocationService", "Attempting to send check-in notification for $category")
+
+            val categoryName = when (category) {
+                LocationCategory.LIBRARY -> "Library"
+                LocationCategory.GYM -> "Gym"
+                LocationCategory.BAR -> "Bar"
+                else -> category.name.lowercase().replaceFirstChar { it.uppercase() }
+            }
+
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                System.currentTimeMillis().toInt(), // Unique request code
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            // Check if notifications are enabled
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                if (!notificationManager.areNotificationsEnabled()) {
+                    android.util.Log.e("LocationService", "Notifications are disabled for this app!")
+                    return
+                }
+            }
+
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Checked In!")
+                .setContentText("You've checked into the $categoryName")
+                .setSmallIcon(R.drawable.baseline_alarm_24)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_EVENT) // Fixed category
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOnlyAlertOnce(false) // Allow repeated alerts
+                .setTimeoutAfter(10000) // Show for 10 seconds
+                .setStyle(NotificationCompat.BigTextStyle()
+                    .bigText("You've checked into the $categoryName. Keep up the great work!"))
+                .build()
+
+            // Use timestamp-based ID to ensure uniqueness
+            val notificationId = System.currentTimeMillis().toInt()
+            notificationManager.notify(notificationId, notification)
+
+            android.util.Log.d("LocationService", "Check-in notification sent successfully for $categoryName (ID: $notificationId)")
+        } catch (e: Exception) {
+            android.util.Log.e("LocationService", "Error sending notification", e)
+            e.printStackTrace()
         }
     }
 
@@ -142,58 +258,6 @@ class LocationTrackingService : Service() {
         android.util.Log.d("LocationService", "Updated places cache: ${cachedPlaces.size} places")
     }
 
-    // This now runs entirely on IO dispatcher
-    private suspend fun handleLocationUpdate(location: Location) {
-        android.util.Log.d("LocationService", "=== LOCATION UPDATE ===")
-        android.util.Log.d("LocationService", "Current location: ${location.latitude}, ${location.longitude}")
-        android.util.Log.d("LocationService", "Accuracy: ${location.accuracy}m")
-        android.util.Log.d("LocationService", "UserId: $userId")
-
-        // Update cache if needed
-        val now = System.currentTimeMillis()
-        if (now - lastCacheUpdate > CACHE_DURATION) {
-            updatePlacesCache()
-        }
-
-        val database = UHereDatabase.getDatabase(applicationContext)
-        val locationDao = database.locationDao()
-
-        // Use cached places instead of querying DB every time
-        val places = cachedPlaces
-        android.util.Log.d("LocationService", "Checking ${places.size} places (from cache)")
-
-        if (places.isEmpty()) {
-            android.util.Log.w("LocationService", "⚠️ No places found for this user!")
-        }
-
-        // Find which place we're currently in (if any)
-        val currentPlace = places.firstOrNull { place ->
-            val distance = calculateDistance(
-                location.latitude, location.longitude,
-                place.latitude, place.longitude
-            )
-            android.util.Log.d("LocationService", "Distance to '${place.name}': ${distance.toInt()}m (needs < ${place.radius.toInt()}m)")
-            distance <= place.radius
-        }
-
-        if (currentPlace != null) {
-            android.util.Log.d("LocationService", "✓ INSIDE: ${currentPlace.name} (${currentPlace.category})")
-            if (currentCategory != currentPlace.category) {
-                android.util.Log.d("LocationService", "Category changed from $currentCategory to ${currentPlace.category}")
-                endCurrentSession(locationDao)
-                startNewSession(currentPlace.category, locationDao)
-            } else {
-                android.util.Log.d("LocationService", "Already tracking ${currentPlace.category}")
-            }
-        } else {
-            android.util.Log.d("LocationService", "✗ NOT at any place")
-            if (currentSessionId != null) {
-                android.util.Log.d("LocationService", "Ending current session")
-                endCurrentSession(locationDao)
-            }
-        }
-    }
-
     private suspend fun startNewSession(category: LocationCategory, locationDao: com.cs407.uhere.data.LocationDao) {
         val now = System.currentTimeMillis()
         sessionStartTime = now
@@ -208,7 +272,7 @@ class LocationTrackingService : Service() {
         )
 
         currentSessionId = locationDao.insertSession(session)
-        android.util.Log.d("LocationService", "✅ STARTED new session: ID=$currentSessionId, category=$category, time=$now")
+        android.util.Log.d("LocationService", "STARTED new session: ID=$currentSessionId, category=$category, time=$now")
     }
 
     private suspend fun endCurrentSession(locationDao: com.cs407.uhere.data.LocationDao) {
@@ -216,7 +280,7 @@ class LocationTrackingService : Service() {
             val now = System.currentTimeMillis()
             val duration = ((now - sessionStartTime) / 60000).toInt() // minutes
 
-            android.util.Log.d("LocationService", "⏹️ ENDING session: ID=$sessionId, duration=$duration minutes")
+            android.util.Log.d("LocationService", "ENDING session: ID=$sessionId, duration=$duration minutes")
 
             val existingSession = locationDao.getSessionById(sessionId.toInt())
 
@@ -227,9 +291,9 @@ class LocationTrackingService : Service() {
                 )
 
                 locationDao.updateSession(updatedSession)
-                android.util.Log.d("LocationService", "✅ Session saved: $updatedSession")
+                android.util.Log.d("LocationService", "Session saved: $updatedSession")
             } ?: run {
-                android.util.Log.e("LocationService", "❌ Could not find session $sessionId to update")
+                android.util.Log.e("LocationService", "Could not find session $sessionId to update")
             }
         } ?: run {
             android.util.Log.d("LocationService", "No active session to end")
@@ -271,15 +335,47 @@ class LocationTrackingService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Location Tracking",
-                NotificationManager.IMPORTANCE_LOW
-            )
             val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
+
+            // Delete existing channels to start fresh
+            try {
+                manager.deleteNotificationChannel(CHANNEL_ID)
+                manager.deleteNotificationChannel(CHECKIN_CHANNEL_ID)
+            } catch (e: Exception) {
+                android.util.Log.d("LocationService", "No existing channels to delete")
+            }
+
+            // Foreground service channel
+            val serviceChannel = NotificationChannel(
+                CHANNEL_ID,
+                "Location Tracking Service",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Shows that location tracking is active"
+                setShowBadge(false)
+            }
+            manager.createNotificationChannel(serviceChannel)
+            android.util.Log.d("LocationService", "Created service channel")
+
+            // Check-in notifications channel
+            val checkinChannel = NotificationChannel(
+                CHECKIN_CHANNEL_ID,
+                "Check-in Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Alerts when you check into a location"
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
+                setShowBadge(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                enableLights(true)
+                lightColor = 0xFF00FF00.toInt()
+            }
+            manager.createNotificationChannel(checkinChannel)
+            android.util.Log.d("LocationService", "Created check-in channel with IMPORTANCE_HIGH")
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -296,4 +392,5 @@ class LocationTrackingService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
 }
