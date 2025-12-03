@@ -249,11 +249,10 @@ fun FlippableRewardCard(reward: Reward) {
                     }
                 }
             } else {
-                // Back side - rotated
+                // Back side
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { rotationY = 180f }
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
