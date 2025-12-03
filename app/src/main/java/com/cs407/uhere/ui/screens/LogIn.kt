@@ -15,6 +15,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -83,6 +84,7 @@ fun LoginScreen(
                 email = it
                 errorMessage = null
             },
+            textStyle = TextStyle(Color(0xFF1A1A1A)),
             label = { Text("Email") },
             singleLine = true,
             enabled = !isLoading,
@@ -113,6 +115,7 @@ fun LoginScreen(
                 password = it
                 errorMessage = null
             },
+            textStyle = TextStyle(Color(0xFF1A1A1A)),
             label = { Text("Password") },
             singleLine = true,
             enabled = !isLoading,
