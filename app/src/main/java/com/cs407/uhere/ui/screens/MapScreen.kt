@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -48,6 +50,7 @@ fun MapsScreen(
     val context = LocalContext.current
     val userPlaces by locationViewModel.userPlaces.collectAsState()
     val isTracking by locationViewModel.isTrackingEnabled.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     var mapLoaded by remember { mutableStateOf(false) }
     var mapError by remember { mutableStateOf<String?>(null) }
@@ -212,6 +215,7 @@ fun MapsScreen(
                         zoomControlsEnabled = false
                     ),
                     onMapClick = { latLng ->
+                        focusManager.clearFocus()
                         selectedLocation = latLng
                         showAddPlaceDialog = true
                     },
@@ -220,6 +224,12 @@ fun MapsScreen(
                         android.util.Log.d("MapsScreen", "Map loaded successfully")
                     }
                 ) {
+                    LaunchedEffect(cameraPositionState.isMoving) {
+                        if (cameraPositionState.isMoving) {
+                            focusManager.clearFocus()       // clears while dragging/panning
+                        }
+                    }
+
                     searchedLocation?.let { latLng ->
                         Marker(
                             state = rememberMarkerState(position = latLng),
@@ -329,7 +339,9 @@ fun MapsScreen(
             }
 
             FloatingActionButton(
-                onClick = { showAddPlaceDialog = true },
+                onClick = {
+                    focusManager.clearFocus()
+                    showAddPlaceDialog = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
@@ -559,22 +571,25 @@ fun PlacesSearchBar(
             value = query,
             onValueChange = {
                 query = it
-                if (it.length > 2) {
-                    val request = FindAutocompletePredictionsRequest.builder()
-                        .setQuery(it)
-                        .build()
 
-                    placesClient.findAutocompletePredictions(request)
-                        .addOnSuccessListener { response ->
-                            predictions = response.autocompletePredictions
-                        }
-                        .addOnFailureListener {
-                            predictions = emptyList()
-                        }
-                } else {
+                if (it.length < 3) {
                     predictions = emptyList()
+                    return@OutlinedTextField
                 }
+
+                val request = FindAutocompletePredictionsRequest.builder()
+                    .setQuery(it)
+                    .build()
+
+                placesClient.findAutocompletePredictions(request)
+                    .addOnSuccessListener { response ->
+                        predictions = response.autocompletePredictions
+                    }
+                    .addOnFailureListener {
+                        predictions = emptyList()
+                    }
             },
+            textStyle = TextStyle(color = Color(0xFF1A1A1A)),
             placeholder = { Text("Search location...") },
             singleLine = true,
             trailingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
