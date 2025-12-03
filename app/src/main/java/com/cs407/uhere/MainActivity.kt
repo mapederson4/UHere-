@@ -20,9 +20,11 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -309,7 +311,11 @@ fun BottomNavigationBar(
     navController: androidx.navigation.NavHostController,
     items: List<Screen>
 ) {
-    NavigationBar {
+    NavigationBar(
+        containerColor = Color.White,
+        contentColor = MaterialTheme.colorScheme.primary,
+        tonalElevation = 8.dp
+    ) {
         val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
         items.forEach { screen ->
             NavigationBarItem(
@@ -329,7 +335,14 @@ fun BottomNavigationBar(
                             restoreState = true
                         }
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = Color.Gray,
+                    unselectedTextColor = Color.Gray,
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                )
             )
         }
     }
