@@ -231,16 +231,18 @@ fun MapsScreen(
                     }
 
                     searchedLocation?.let { latLng ->
-                        Marker(
-                            state = rememberMarkerState(position = latLng),
-                            title = "Selected Location",
-                            onClick = {
-                                selectedLocation = latLng
-                                showAddPlaceDialog = true
-                                true
-                            },
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
-                        )
+                        key(latLng.latitude to latLng.longitude) {
+                            Marker(
+                                state = rememberMarkerState(position = latLng),
+                                title = "Selected Location",
+                                onClick = {
+                                    selectedLocation = latLng
+                                    showAddPlaceDialog = true
+                                    true
+                                },
+                                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                            )
+                        }
                     }
 
                     // Use memoized data to prevent recomposition
