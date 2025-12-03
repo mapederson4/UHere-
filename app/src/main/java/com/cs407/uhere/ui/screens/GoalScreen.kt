@@ -118,7 +118,7 @@ fun GoalScreen(
                 color = Color(0xFF1976D2)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             ImprovedGoalCard(
                 iconRes = R.drawable.drink,
@@ -133,7 +133,7 @@ fun GoalScreen(
                 color = Color(0xFFFF6F00)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             ImprovedGoalCard(
                 iconRes = R.drawable.barbell,
@@ -148,7 +148,7 @@ fun GoalScreen(
                 color = Color(0xFF2E7D32)
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -200,6 +200,9 @@ fun GoalScreen(
                     Text("Save Goals", fontWeight = FontWeight.SemiBold)
                 }
             }
+
+            // Extra spacing at bottom to ensure buttons are always visible
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -223,7 +226,7 @@ fun ImprovedGoalCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -232,7 +235,7 @@ fun ImprovedGoalCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(52.dp)
                             .clip(CircleShape)
                             .background(color.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
@@ -240,17 +243,17 @@ fun ImprovedGoalCard(
                         Image(
                             painter = painterResource(iconRes),
                             contentDescription = label,
-                            modifier = Modifier.size(36.dp),
+                            modifier = Modifier.size(30.dp),
                             contentScale = ContentScale.Fit
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column {
                         Text(
                             text = label,
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -260,7 +263,7 @@ fun ImprovedGoalCard(
                             } else {
                                 "${currentHours.toInt()} / ${hours.toInt()} Hours"
                             },
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -268,27 +271,27 @@ fun ImprovedGoalCard(
 
                 // Circular Progress
                 Box(
-                    modifier = Modifier.size(64.dp),
+                    modifier = Modifier.size(52.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.size(64.dp),
+                        modifier = Modifier.size(52.dp),
                         color = color,
                         trackColor = color.copy(alpha = 0.2f),
-                        strokeWidth = 6.dp
+                        strokeWidth = 5.dp
                     )
                     Text(
                         text = "${(progress * 100).toInt()}%",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = color,
-                        fontSize = 14.sp
+                        fontSize = 11.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Slider
             Column {
@@ -296,7 +299,7 @@ fun ImprovedGoalCard(
                     text = "Weekly Target: ${hours.toInt()} hours",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Slider(
                     value = hours,
