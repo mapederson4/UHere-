@@ -38,6 +38,7 @@ import com.cs407.uhere.viewmodel.GoalViewModel
 import com.cs407.uhere.viewmodel.LocationViewModel
 import com.cs407.uhere.viewmodel.UserViewModel
 import com.google.android.libraries.places.api.Places
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val userViewModel: UserViewModel by viewModels()
@@ -146,9 +147,24 @@ fun AppNavigation(
     val userState by userViewModel.userState.collectAsState()
     val items = listOf(Screen.Home, Screen.Goal, Screen.Maps, Screen.Reward, Screen.Settings)
 
-    // CREATE WeeklyProgressManager instance - this is the key addition
     val context = LocalContext.current
-    val weeklyProgressManager = remember { WeeklyProgressManager(context) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // ✅ CRITICAL: Check for week transitions when user logs in or app starts
+    LaunchedEffect(userState) {
+        userState?.let { user ->
+            coroutineScope.launch {
+                try {
+                    android.util.Log.d("MainActivity", "Checking week transition for user ${user.id}")
+                    val weeklyProgressManager = WeeklyProgressManager(context)
+                    weeklyProgressManager.checkAndHandleWeekTransition(user.id)
+                    android.util.Log.d("MainActivity", "Week transition check completed")
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "Error checking week transition", e)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(userState) {
         if (userState == null) {
@@ -277,7 +293,6 @@ fun AppNavigation(
             }
         }
 
-
         composable(Screen.Reward.route) {
             val context = LocalContext.current
             val database = remember { com.cs407.uhere.data.UHereDatabase.getDatabase(context) }
@@ -288,7 +303,7 @@ fun AppNavigation(
                 RewardScreen(
                     modifier = Modifier.padding(innerPadding),
                     userId = userState?.id,
-                    database = database  // Pass database instead of WeeklyProgressManager
+                    database = database
                 )
             }
         }
