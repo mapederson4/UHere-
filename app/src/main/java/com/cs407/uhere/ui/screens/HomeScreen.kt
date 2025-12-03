@@ -3,14 +3,24 @@ package com.cs407.uhere.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.cs407.uhere.BuildConfig
 import com.cs407.uhere.R
 import com.cs407.uhere.data.LocationCategory
@@ -46,6 +56,7 @@ fun HomeScreen(
     var aiLoading by remember { mutableStateOf(false) }
     var aiError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(userState) {
         userState?.let { user ->
@@ -59,45 +70,95 @@ fun HomeScreen(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize().padding(0.dp, 16.dp)) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "Welcome, ${userState?.displayName ?: "User"}!",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Beautiful Header with Gradient
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                )
+                .padding(24.dp)
+        ) {
+            Column {
+                Text(
+                    text = "Welcome back,",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 16.sp
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Text(
+                        text = userState?.displayName ?: "User",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 32.sp
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .size(28.dp)
+                    )
+                }
+                Text(
+                    text = "Here's your weekly progress",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.85f),
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
 
-            Text(
-                text = "Weekly Overview",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+        // Content Section
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Progress Cards
+            if (goalsWithProgress.isNotEmpty()) {
+                Text(
+                    text = "This Week's Goals",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .background(Color.White)
-                    .fillMaxWidth()
-            ) {
                 goalsWithProgress.forEach { goalWithProgress ->
-                    CategoryProgressCard(
+                    ImprovedCategoryProgressCard(
                         category = goalWithProgress.category,
                         progress = goalWithProgress.progressPercentage,
                         currentMinutes = goalWithProgress.currentMinutes,
                         targetHours = goalWithProgress.targetHours
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
-
-                if (goalsWithProgress.isEmpty()) {
-                    Text(
-                        text = "No goals set yet. Go to Goals tab to set your weekly targets!",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+            } else {
+                EmptyStateCard()
             }
 
-            OutlinedButton(
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // AI Summary Button
+            Button(
                 onClick = {
                     showDialog = true
                     aiLoading = true
@@ -119,16 +180,32 @@ fun HomeScreen(
                         }
                     }
                 },
-                enabled = goalsWithProgress.isNotEmpty()
+                enabled = goalsWithProgress.isNotEmpty(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
             ) {
-                Text("View AI Weekly Summary")
+                Text(
+                    "Get AI Weekly Insights",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
 
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
-                title = { Text(text = "Weekly Summary") },
+                title = {
+                    Text(
+                        text = "Your Weekly Insights",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 text = {
                     when {
                         aiLoading -> {
@@ -138,7 +215,7 @@ fun HomeScreen(
                             ) {
                                 CircularProgressIndicator(modifier = Modifier.size(40.dp))
                                 Spacer(modifier = Modifier.height(16.dp))
-                                Text("Generating your personalized summary...")
+                                Text("Analyzing your progress...")
                             }
                         }
                         aiError != null -> {
@@ -149,14 +226,15 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
-                                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 Text(aiSummary ?: "", style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                         aiSummary != null -> {
                             Text(
                                 aiSummary ?: "",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                lineHeight = 24.sp
                             )
                         }
                     }
@@ -165,52 +243,140 @@ fun HomeScreen(
                     TextButton(onClick = { showDialog = false }) {
                         Text("Close")
                     }
-                }
+                },
+                shape = RoundedCornerShape(20.dp)
             )
         }
     }
 }
 
 @Composable
-fun CategoryProgressCard(
+fun ImprovedCategoryProgressCard(
     category: LocationCategory,
     progress: Float,
     currentMinutes: Int,
     targetHours: Float
 ) {
-    val (iconRes, label) = when (category) {
-        LocationCategory.LIBRARY -> R.drawable.book to "Library"
-        LocationCategory.BAR -> R.drawable.drink to "Bar"
-        LocationCategory.GYM -> R.drawable.barbell to "Gym"
+    val (iconRes, label, color) = when (category) {
+        LocationCategory.LIBRARY -> Triple(R.drawable.book, "Library", Color(0xFF1976D2))
+        LocationCategory.BAR -> Triple(R.drawable.drink, "Social Time", Color(0xFFFF6F00))
+        LocationCategory.GYM -> Triple(R.drawable.barbell, "Fitness", Color(0xFF2E7D32))
     }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        modifier = Modifier.padding(4.dp)
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column {
-            Row(modifier = Modifier.padding(8.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon Circle
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
                 Image(
                     painter = painterResource(iconRes),
                     contentDescription = label,
-                    modifier = Modifier
-                        .size(78.dp)
-                        .padding(4.dp),
+                    modifier = Modifier.size(32.dp),
                     contentScale = ContentScale.Fit
                 )
-
-                Column(modifier = Modifier.padding(start = 8.dp)) {
-                    Text(label, style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "${currentMinutes / 60}h ${currentMinutes % 60}m / ${targetHours.toInt()}h",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
             }
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth(),
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Text Content
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${currentMinutes / 60}h ${currentMinutes % 60}m of ${targetHours.toInt()}h",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = color,
+                    trackColor = color.copy(alpha = 0.2f)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Progress Percentage
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "${(progress * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = color,
+                    fontSize = 14.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyStateCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Ready to Start?",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Head to the Goals tab to set your weekly targets and start tracking your time!",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }
