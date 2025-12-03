@@ -16,9 +16,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Badge::class,
         UserBadge::class,
         Place::class,
-        WeeklyProgress::class  // ADDED
+        WeeklyProgress::class,
+        GoalCompletion::class  // NEW: Added for instant badge unlocking
     ],
-    version = 4,  // UPDATED from 3 to 4
+    version = 5,  // UPDATED from 4 to 5
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -28,7 +29,8 @@ abstract class UHereDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao
     abstract fun badgeDao(): BadgeDao
     abstract fun placeDao(): PlaceDao
-    abstract fun weeklyProgressDao(): WeeklyProgressDao  // ADDED
+    abstract fun weeklyProgressDao(): WeeklyProgressDao
+    abstract fun goalCompletionDao(): GoalCompletionDao  // NEW: Added DAO
 
     companion object {
         @Volatile
@@ -67,7 +69,6 @@ abstract class UHereDatabase : RoomDatabase() {
             }
         }
 
-        // ADDED: Migration for WeeklyProgress table
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("""
@@ -86,6 +87,29 @@ abstract class UHereDatabase : RoomDatabase() {
             }
         }
 
+        // NEW: Migration for GoalCompletion table (instant badge unlocking)
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS goal_completions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        userId INTEGER NOT NULL,
+                        category TEXT NOT NULL,
+                        weekStartDate INTEGER NOT NULL,
+                        completedAt INTEGER NOT NULL,
+                        targetHours REAL NOT NULL,
+                        completedMinutes INTEGER NOT NULL
+                    )
+                """)
+
+                // Create unique index to prevent duplicate completions for same week/category
+                database.execSQL("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS index_goal_completions_userId_weekStartDate_category 
+                    ON goal_completions(userId, weekStartDate, category)
+                """)
+            }
+        }
+
         fun getDatabase(context: Context): UHereDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -93,7 +117,12 @@ abstract class UHereDatabase : RoomDatabase() {
                     UHereDatabase::class.java,
                     "uhere_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)  // ADDED MIGRATION_3_4
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5  // NEW: Added migration
+                    )
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

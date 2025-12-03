@@ -18,6 +18,7 @@ data class GoalWithProgress(
 class GoalViewModel(application: Application) : AndroidViewModel(application) {
     private val goalDao = UHereDatabase.getDatabase(application).goalDao()
     private val locationDao = UHereDatabase.getDatabase(application).locationDao()
+    private val goalCompletionDao = UHereDatabase.getDatabase(application).goalCompletionDao()
 
     private val _goalsWithProgress = MutableStateFlow<List<GoalWithProgress>>(emptyList())
     val goalsWithProgress: StateFlow<List<GoalWithProgress>> = _goalsWithProgress.asStateFlow()
@@ -52,6 +53,17 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
                         (currentMinutes.toFloat() / targetMinutes).coerceIn(0f, 1f)
                     } else 0f
 
+                    // INSTANT COMPLETION TRACKING: Check if goal just reached 100%
+                    if (progress >= 1f && targetMinutes > 0) {
+                        checkAndRecordCompletion(
+                            userId = userId,
+                            category = goal.locationCategory,
+                            weekStart = weekStart,
+                            targetHours = goal.targetHours,
+                            completedMinutes = currentMinutes
+                        )
+                    }
+
                     GoalWithProgress(
                         category = goal.locationCategory,
                         targetHours = goal.targetHours,
@@ -60,6 +72,36 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
                 _goalsWithProgress.value = goalsWithProgressList
+            }
+        }
+    }
+
+    /**
+     * Check if goal is 100% complete and record it immediately for badge unlocking
+     */
+    private suspend fun checkAndRecordCompletion(
+        userId: Int,
+        category: LocationCategory,
+        weekStart: Long,
+        targetHours: Float,
+        completedMinutes: Int
+    ) {
+        // Check if already recorded for this week
+        val existing = goalCompletionDao.getCompletionForWeek(userId, weekStart, category)
+
+        if (existing == null) {
+            val completion = GoalCompletion(
+                userId = userId,
+                category = category,
+                weekStartDate = weekStart,
+                completedAt = System.currentTimeMillis(),
+                targetHours = targetHours,
+                completedMinutes = completedMinutes
+            )
+
+            val inserted = goalCompletionDao.insertCompletion(completion)
+            if (inserted > 0) {
+                android.util.Log.d("GoalViewModel", "🎉 BADGE UNLOCKED! ${category.name} goal completed at 100%!")
             }
         }
     }

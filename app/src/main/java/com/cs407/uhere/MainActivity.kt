@@ -277,15 +277,18 @@ fun AppNavigation(
             }
         }
 
+
         composable(Screen.Reward.route) {
+            val context = LocalContext.current
+            val database = remember { com.cs407.uhere.data.UHereDatabase.getDatabase(context) }
+
             Scaffold(
                 bottomBar = { BottomNavigationBar(navController, items) }
             ) { innerPadding ->
-                // UPDATED: Pass userId and weeklyProgressManager to RewardScreen
                 RewardScreen(
                     modifier = Modifier.padding(innerPadding),
                     userId = userState?.id,
-                    weeklyProgressManager = weeklyProgressManager
+                    database = database  // Pass database instead of WeeklyProgressManager
                 )
             }
         }

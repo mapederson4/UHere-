@@ -44,91 +44,112 @@ data class Reward(
 fun RewardScreen(
     modifier: Modifier = Modifier,
     userId: Int?,
-    weeklyProgressManager: WeeklyProgressManager
+    database: UHereDatabase
 ) {
-    var streakInfo by remember { mutableStateOf<Map<String, StreakInfo>?>(null) }
+    // INSTANT COMPLETIONS - for badge unlocking
+    var completions by remember { mutableStateOf<List<GoalCompletion>>(emptyList()) }
+
+    // WEEKLY PROGRESS - for streaks and historical data
+    var weeklyProgress by remember { mutableStateOf<List<WeeklyProgress>>(emptyList()) }
+
     val coroutineScope = rememberCoroutineScope()
 
-    // Load streak information
+    // Load both instant completions AND weekly progress
     LaunchedEffect(userId) {
         userId?.let {
-            coroutineScope.launch {
-                streakInfo = weeklyProgressManager.getAllStreaks(it)
+            // Load instant completions
+            launch {
+                database.goalCompletionDao().getAllCompletions(it).collect { allCompletions ->
+                    completions = allCompletions
+                }
+            }
+
+            // Load weekly progress for streaks
+            launch {
+                database.weeklyProgressDao().getAllWeeklyProgress(it).collect { progress ->
+                    weeklyProgress = progress
+                }
             }
         }
     }
 
-    // Calculate which badges should be unlocked based on streak data
-    val barStreak = streakInfo?.get("bar")
-    val gymStreak = streakInfo?.get("gym")
-    val libraryStreak = streakInfo?.get("library")
+    // Calculate badges based on INSTANT completions (unlocks when hitting 100%)
+    val barCompletions = completions.filter { it.category == LocationCategory.BAR }
+    val gymCompletions = completions.filter { it.category == LocationCategory.GYM }
+    val libraryCompletions = completions.filter { it.category == LocationCategory.LIBRARY }
+
+    // Calculate streaks from WEEKLY progress (for streak display)
+    val libraryStreak = StreakCalculator.calculateCategoryStreak(weeklyProgress, LocationCategory.LIBRARY)
+    val barStreak = StreakCalculator.calculateCategoryStreak(weeklyProgress, LocationCategory.BAR)
+    val gymStreak = StreakCalculator.calculateCategoryStreak(weeklyProgress, LocationCategory.GYM)
+    val allGoalsStreak = StreakCalculator.calculateAllGoalsStreak(weeklyProgress)
 
     val rewards = listOf(
-        // Bar badges
+        // Bar badges - INSTANT UNLOCK based on completions
         Reward(
             id = 1,
             drawableRes = R.drawable.bar1,
             name = "Social Butterfly",
-            description = "Meet bar goals once",
-            isUnlocked = (barStreak?.totalWeeksCompleted ?: 0) >= 1
+            description = "Complete bar goal once",
+            isUnlocked = barCompletions.size >= 1
         ),
         Reward(
             id = 2,
             drawableRes = R.drawable.bar2,
             name = "Party Expert",
-            description = "Meet bar goals three times",
-            isUnlocked = (barStreak?.totalWeeksCompleted ?: 0) >= 3
+            description = "Complete bar goal three times",
+            isUnlocked = barCompletions.size >= 3
         ),
         Reward(
             id = 3,
             drawableRes = R.drawable.bar3,
             name = "Social Legend",
-            description = "Meet bar goals three weeks consecutively",
-            isUnlocked = (barStreak?.bestStreak ?: 0) >= 3
+            description = "Complete bar goal three weeks consecutively",
+            isUnlocked = calculateConsecutiveWeeks(barCompletions) >= 3
         ),
         // Gym badges
         Reward(
             id = 4,
             drawableRes = R.drawable.gym1,
             name = "Fitness Starter",
-            description = "Meet gym goals once",
-            isUnlocked = (gymStreak?.totalWeeksCompleted ?: 0) >= 1
+            description = "Complete gym goal once",
+            isUnlocked = gymCompletions.size >= 1
         ),
         Reward(
             id = 5,
             drawableRes = R.drawable.gym2,
             name = "Gym Regular",
-            description = "Meet gym goals three times",
-            isUnlocked = (gymStreak?.totalWeeksCompleted ?: 0) >= 3
+            description = "Complete gym goal three times",
+            isUnlocked = gymCompletions.size >= 3
         ),
         Reward(
             id = 6,
             drawableRes = R.drawable.gym3,
             name = "Fitness Champion",
-            description = "Meet gym goals three weeks consecutively",
-            isUnlocked = (gymStreak?.bestStreak ?: 0) >= 3
+            description = "Complete gym goal three weeks consecutively",
+            isUnlocked = calculateConsecutiveWeeks(gymCompletions) >= 3
         ),
         // Library badges
         Reward(
             id = 7,
             drawableRes = R.drawable.library1,
             name = "Study Beginner",
-            description = "Meet library goals once",
-            isUnlocked = (libraryStreak?.totalWeeksCompleted ?: 0) >= 1
+            description = "Complete library goal once",
+            isUnlocked = libraryCompletions.size >= 1
         ),
         Reward(
             id = 8,
             drawableRes = R.drawable.library2,
             name = "Dedicated Scholar",
-            description = "Meet library goals three times",
-            isUnlocked = (libraryStreak?.totalWeeksCompleted ?: 0) >= 3
+            description = "Complete library goal three times",
+            isUnlocked = libraryCompletions.size >= 3
         ),
         Reward(
             id = 9,
             drawableRes = R.drawable.library3,
             name = "Academic Master",
-            description = "Meet library goals three weeks consecutively",
-            isUnlocked = (libraryStreak?.bestStreak ?: 0) >= 3
+            description = "Complete library goal three weeks consecutively",
+            isUnlocked = calculateConsecutiveWeeks(libraryCompletions) >= 3
         ),
     )
 
@@ -140,7 +161,7 @@ fun RewardScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header Section - UNIFIED STYLE
+        // Header Section
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,27 +212,27 @@ fun RewardScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Streaks Section Header - UNIFIED STYLE
+            // STREAKS SECTION (using WeeklyProgress)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 12.dp)
             ) {
                 Text(
                     text = "Your Streaks",
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
+                    fontSize = 24.sp
                 )
                 Text(
                     text = " 🔥",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontSize = 28.sp
+                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = 24.sp
                 )
             }
 
-            streakInfo?.let { streaks ->
+            if (weeklyProgress.isNotEmpty()) {
                 // All Goals Streak
-                streaks["all_goals"]?.let { allGoalsStreak ->
+                if (allGoalsStreak.totalWeeksCompleted > 0) {
                     StreakCard(
                         title = "All Goals Complete",
                         icon = Icons.Default.EmojiEvents,
@@ -219,15 +240,15 @@ fun RewardScreen(
                         streakInfo = allGoalsStreak,
                         isPrimary = true
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
                 // Individual category streaks
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    streaks["library"]?.let { libraryStreak ->
+                    if (libraryStreak.totalWeeksCompleted > 0) {
                         CategoryStreakCard(
                             title = "Library",
                             iconRes = R.drawable.book,
@@ -237,7 +258,7 @@ fun RewardScreen(
                         )
                     }
 
-                    streaks["gym"]?.let { gymStreak ->
+                    if (gymStreak.totalWeeksCompleted > 0) {
                         CategoryStreakCard(
                             title = "Gym",
                             iconRes = R.drawable.barbell,
@@ -247,7 +268,7 @@ fun RewardScreen(
                         )
                     }
 
-                    streaks["bar"]?.let { barStreak ->
+                    if (barStreak.totalWeeksCompleted > 0) {
                         CategoryStreakCard(
                             title = "Bar",
                             iconRes = R.drawable.drink,
@@ -257,16 +278,16 @@ fun RewardScreen(
                         )
                     }
                 }
-            } ?: run {
+            } else {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     )
                 ) {
                     Text(
-                        text = "Complete your first goal to start tracking streaks!",
+                        text = "Complete your first week to start tracking streaks!",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(16.dp)
@@ -276,22 +297,49 @@ fun RewardScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Badges Section Header - UNIFIED STYLE
+            // BADGES SECTION (using GoalCompletions - instant unlock)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 12.dp)
             ) {
                 Text(
                     text = "Collectible Badges",
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
+                    fontSize = 24.sp
                 )
                 Text(
                     text = " 🏆",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontSize = 28.sp
+                    style = MaterialTheme.typography.titleLarge,
+                    fontSize = 24.sp
                 )
+            }
+
+            // Progress indicator
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$unlockedCount of $totalCount unlocked",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "${((unlockedCount.toFloat() / totalCount) * 100).toInt()}%",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             // Badges Grid
@@ -458,6 +506,29 @@ fun CategoryStreakCard(
             )
         }
     }
+}
+
+/**
+ * Calculate consecutive weeks from completion records
+ */
+private fun calculateConsecutiveWeeks(completions: List<GoalCompletion>): Int {
+    if (completions.isEmpty()) return 0
+
+    val sortedWeeks = completions.map { it.weekStartDate }.distinct().sorted()
+    var maxStreak = 1
+    var currentStreak = 1
+
+    for (i in 1 until sortedWeeks.size) {
+        val weekDiff = (sortedWeeks[i] - sortedWeeks[i - 1]) / (7 * 24 * 60 * 60 * 1000)
+        if (weekDiff == 1L) {
+            currentStreak++
+            maxStreak = maxOf(maxStreak, currentStreak)
+        } else {
+            currentStreak = 1
+        }
+    }
+
+    return maxStreak
 }
 
 @Composable
