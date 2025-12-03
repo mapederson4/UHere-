@@ -2,6 +2,7 @@ package com.cs407.uhere.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -43,7 +44,8 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val isTracking by locationViewModel.isTrackingEnabled.collectAsState()
-    var hasLocationPermission by remember {
+    // Check permissions
+    var hasForegroundPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
@@ -51,27 +53,72 @@ fun SettingsScreen(
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
 
-        val fine = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarse = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+    var hasBackgroundPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true // Not needed on Android 9 and below
+            }
+        )
+    }
 
-        if (fine || coarse) {
-            // Permission granted → NOW start tracking
+    // Step 2: Request background location permission (separate launcher)
+    val backgroundPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasBackgroundPermission = isGranted
+
+        if (isGranted && hasForegroundPermission) {
+            // All permissions granted, start tracking
             userState?.let { user ->
                 LocationTrackingService.start(context, user.id)
                 locationViewModel.setTrackingEnabled(true)
             }
+        } else if (!isGranted) {
+            // Background permission denied - still allow foreground tracking
+            userState?.let { user ->
+                LocationTrackingService.start(context, user.id)
+                locationViewModel.setTrackingEnabled(true)
+            }
+        }
+    }
+
+    // Step 1: Request foreground location permissions
+    val foregroundPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+        hasForegroundPermission = fineGranted || coarseGranted
+
+        if (hasForegroundPermission) {
+            // Step 2: Request background permission (Android 10+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundPermission) {
+                backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            } else {
+                // All permissions granted, start tracking
+                userState?.let { user ->
+                    LocationTrackingService.start(context, user.id)
+                    locationViewModel.setTrackingEnabled(true)
+                }
+            }
         } else {
-            // Permission denied → do nothing
             locationViewModel.setTrackingEnabled(false)
         }
     }
+
+
+
     var showDemoMessage by remember { mutableStateOf(false) }
     var showWeekMessage by remember { mutableStateOf("") }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showPermissionExplanation by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -238,16 +285,14 @@ fun SettingsScreen(
                         onCheckedChange = { newValue ->
                             userState?.let { user ->
                                 if (newValue) {
-                                    if (!hasLocationPermission) {
-                                        // Ask for permission first
-                                        permissionLauncher.launch(
-                                            arrayOf(
-                                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                                Manifest.permission.ACCESS_COARSE_LOCATION
-                                            )
-                                        )
-                                    }else {
-                                        // Already granted → safe to start
+                                    if (!hasForegroundPermission) {
+                                        // Show explanation before requesting
+                                        showPermissionExplanation = true
+                                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundPermission) {
+                                        // Request background permission
+                                        backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                                    } else {
+                                        // Already have all permissions
                                         userState?.let { user ->
                                             LocationTrackingService.start(context, user.id)
                                             locationViewModel.setTrackingEnabled(true)
@@ -558,6 +603,57 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    // Permission Explanation Dialog
+    if (showPermissionExplanation) {
+        AlertDialog(
+            onDismissRequest = { showPermissionExplanation = false },
+            title = {
+                Text(
+                    text = "Location Permission Required",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        "UHere needs location access to track your progress:\n\n" +
+                                "• Foreground: While using the app\n" +
+                                "• Background: Even when the app is closed\n\n" +
+                                "Your location data is private and used only for your goals."
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "You'll need to grant 'Allow all the time' in the next screen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionExplanation = false
+                        foregroundPermissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                ) {
+                    Text("Allow", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionExplanation = false }) {
+                    Text("Cancel")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
     }
 
     // Logout Confirmation Dialog

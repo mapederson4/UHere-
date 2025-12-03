@@ -2,6 +2,7 @@ package com.cs407.uhere.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.cs407.uhere.data.LocationCategory
@@ -51,14 +53,84 @@ fun MapsScreen(
     var mapError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
     var searchedLocation by remember { mutableStateOf<LatLng?>(null) }
+    var showPermissionExplanation by remember { mutableStateOf(false) }
 
-    var hasLocationPermission by remember {
+    /*var hasLocationPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         )
+    }*/
+
+    // Check permissions
+    var hasForegroundPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    var hasBackgroundPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true // Not needed on Android 9 and below
+            }
+        )
+    }
+
+    // Step 2: Request background location permission (separate launcher)
+    val backgroundPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasBackgroundPermission = isGranted
+
+        if (isGranted && hasForegroundPermission) {
+            // All permissions granted, start tracking
+            userState?.let { user ->
+                LocationTrackingService.start(context, user.id)
+                locationViewModel.setTrackingEnabled(true)
+            }
+        } else if (!isGranted) {
+            // Background permission denied - still allow foreground tracking
+            userState?.let { user ->
+                LocationTrackingService.start(context, user.id)
+                locationViewModel.setTrackingEnabled(true)
+            }
+        }
+    }
+
+    // Step 1: Request foreground location permissions
+    val foregroundPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+        hasForegroundPermission = fineGranted || coarseGranted
+
+        if (hasForegroundPermission) {
+            // Step 2: Request background permission (Android 10+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !hasBackgroundPermission) {
+                backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            } else {
+                // All permissions granted, start tracking
+                userState?.let { user ->
+                    LocationTrackingService.start(context, user.id)
+                    locationViewModel.setTrackingEnabled(true)
+                }
+            }
+        } else {
+            locationViewModel.setTrackingEnabled(false)
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -74,11 +146,11 @@ fun MapsScreen(
     var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
     var toDelete by remember { mutableStateOf<LatLng?>(null) }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
+    /*val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
-    }
+    }*/
 
     // Load places when user changes - with IO dispatcher
     LaunchedEffect(userState) {
@@ -102,7 +174,7 @@ fun MapsScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (!hasLocationPermission) {
+        if (!(hasForegroundPermission && hasBackgroundPermission)) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -111,12 +183,13 @@ fun MapsScreen(
                 Text("Location permission is required")
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
-                    permissionLauncher.launch(
+                    /*permissionLauncher.launch(
                         arrayOf(
                             Manifest.permission.ACCESS_FINE_LOCATION,
                             Manifest.permission.ACCESS_COARSE_LOCATION
                         )
-                    )
+                    )*/
+                    showPermissionExplanation = true
                 }) {
                     Text("Grant Permission")
                 }
@@ -313,7 +386,60 @@ fun MapsScreen(
             android.util.Log.e("MapsScreen", "Map load timeout")
         }
     }
+
+    // Permission Explanation Dialog
+    if (showPermissionExplanation) {
+        AlertDialog(
+            onDismissRequest = { showPermissionExplanation = false },
+            title = {
+                Text(
+                    text = "Location Permission Required",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        "UHere needs location access to track your progress:\n\n" +
+                                "• Foreground: While using the app\n" +
+                                "• Background: Even when the app is closed\n\n" +
+                                "Your location data is private and used only for your goals."
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "You'll need to grant 'Allow all the time' in the next screen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionExplanation = false
+                        foregroundPermissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                ) {
+                    Text("Allow", fontWeight = FontWeight.SemiBold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionExplanation = false }) {
+                    Text("Cancel")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -360,7 +486,7 @@ fun AddPlaceDialog(
                     ) {
                         LocationCategory.entries.forEach { cat ->
                             DropdownMenuItem(
-                                text = { Text(cat.name) },
+                                text = { Text(cat.displayName) },
                                 onClick = {
                                     category = cat
                                     expanded = false
