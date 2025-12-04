@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cs407.uhere.data.LocationCategory
 import com.cs407.uhere.data.Place
+import com.cs407.uhere.data.SettingsDataStore
 import com.cs407.uhere.data.UHereDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 
 class LocationViewModel(application: Application) : AndroidViewModel(application) {
     private val placeDao = UHereDatabase.getDatabase(application).placeDao()
+    private val settingsDataStore = SettingsDataStore(application)
 
     private val _userPlaces = MutableStateFlow<List<Place>>(emptyList())
     val userPlaces: StateFlow<List<Place>> = _userPlaces.asStateFlow()
@@ -25,6 +27,15 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
 
     private var currentUserId: Int? = null
     private var loadJob: Job? = null
+
+    init {
+        // Load the persisted tracking state when ViewModel is created
+        viewModelScope.launch {
+            settingsDataStore.isTrackingEnabled.collect { enabled ->
+                _isTrackingEnabled.value = enabled
+            }
+        }
+    }
 
     fun loadUserPlaces(userId: Int) {
         if (currentUserId != userId) {
@@ -70,13 +81,15 @@ class LocationViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setTrackingEnabled(enabled: Boolean) {
-        _isTrackingEnabled.value = enabled
+        viewModelScope.launch {
+            settingsDataStore.setTrackingEnabled(enabled)
+            // The init block's collector will automatically update _isTrackingEnabled
+        }
     }
 
     fun clearState() {
         loadJob?.cancel()
         _userPlaces.value = emptyList()
-        _isTrackingEnabled.value = false
         currentUserId = null
     }
 }
