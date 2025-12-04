@@ -90,21 +90,21 @@ fun RewardScreen(
             id = 1,
             drawableRes = R.drawable.bar1,
             name = "Social Butterfly",
-            description = "Complete bar goal once",
+            description = "Complete social time goal once",
             isUnlocked = barCompletions.size >= 1
         ),
         Reward(
             id = 2,
             drawableRes = R.drawable.bar2,
             name = "Party Expert",
-            description = "Complete bar goal three times",
+            description = "Complete social time goal three times",
             isUnlocked = barCompletions.size >= 3
         ),
         Reward(
             id = 3,
             drawableRes = R.drawable.bar3,
             name = "Social Legend",
-            description = "Complete bar goal three weeks consecutively",
+            description = "Complete social time goal three weeks consecutively",
             isUnlocked = calculateConsecutiveWeeks(barCompletions) >= 3
         ),
         // Gym badges
@@ -112,21 +112,21 @@ fun RewardScreen(
             id = 4,
             drawableRes = R.drawable.gym1,
             name = "Fitness Starter",
-            description = "Complete gym goal once",
+            description = "Complete fitness goal once",
             isUnlocked = gymCompletions.size >= 1
         ),
         Reward(
             id = 5,
             drawableRes = R.drawable.gym2,
             name = "Gym Regular",
-            description = "Complete gym goal three times",
+            description = "Complete fitness goal three times",
             isUnlocked = gymCompletions.size >= 3
         ),
         Reward(
             id = 6,
             drawableRes = R.drawable.gym3,
             name = "Fitness Champion",
-            description = "Complete gym goal three weeks consecutively",
+            description = "Complete fitness goal three weeks consecutively",
             isUnlocked = calculateConsecutiveWeeks(gymCompletions) >= 3
         ),
         // Library badges

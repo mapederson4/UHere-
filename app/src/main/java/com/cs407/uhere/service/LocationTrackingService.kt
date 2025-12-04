@@ -198,8 +198,8 @@ class LocationTrackingService : Service() {
 
             val categoryName = when (category) {
                 LocationCategory.LIBRARY -> "Library"
-                LocationCategory.GYM -> "Gym"
-                LocationCategory.BAR -> "Bar"
+                LocationCategory.GYM -> "Fitness"
+                LocationCategory.BAR -> "Social Time"
             }
 
             val intent = Intent(this, MainActivity::class.java).apply {
@@ -217,7 +217,7 @@ class LocationTrackingService : Service() {
             val builder = NotificationCompat.Builder(this, CHECKIN_CHANNEL_ID)
                 .setSmallIcon(R.drawable.baseline_alarm_24)
                 .setContentTitle("Checked In!")
-                .setContentText("You've arrived at the $categoryName")
+                .setContentText("You've arrived at the $categoryName location")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)

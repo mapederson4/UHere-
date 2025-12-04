@@ -251,7 +251,7 @@ fun MapsScreen(
                             Marker(
                                 state = rememberMarkerState(position = latLng),
                                 title = place.name,
-                                snippet = place.category.name,
+                                snippet = place.category.displayName,
                                 onInfoWindowClick = { marker ->
                                     toDelete = marker.position
                                     showDeletePlaceDialog = true
@@ -486,7 +486,7 @@ fun AddPlaceDialog(
                     onExpandedChange = { expanded = it }
                 ) {
                     OutlinedTextField(
-                        value = category.name,
+                        value = category.displayName,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Category") },
