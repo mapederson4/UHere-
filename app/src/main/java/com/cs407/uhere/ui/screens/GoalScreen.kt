@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cs407.uhere.R
@@ -82,7 +83,7 @@ fun GoalScreen(
                         )
                     )
                 )
-                .padding(24.dp)
+                .padding(28.dp)
         ) {
             Column {
                 Text(
@@ -90,19 +91,20 @@ fun GoalScreen(
                     style = MaterialTheme.typography.headlineLarge,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
+                    fontSize = 36.sp
                 )
                 Text(
-                    text = "Set your time targets for the week",
+                    text = "Set your time goals for the week",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.85f),
-                    modifier = Modifier.padding(top = 8.dp)
+                    color = Color.White.copy(alpha = 0.95f),
+                    modifier = Modifier.padding(top = 8.dp),
+                    fontSize = 18.sp
                 )
             }
         }
 
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ImprovedGoalCard(
@@ -115,10 +117,14 @@ fun GoalScreen(
                 currentHours = goalsWithProgress.find { it.category == LocationCategory.LIBRARY }?.let { it.currentMinutes / 60f }
                     ?: 0f,
                 enabled = !slidersLocked,
-                color = Color(0xFF1976D2)
+                color = Color(0xFF64B5F6),
+                fontColor = Color(0xFF121212),
+                labelFontSize = 24.sp,
+                progressFontSize = 16.sp,
+                targetFontSize = 18.sp
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             ImprovedGoalCard(
                 iconRes = R.drawable.drink,
@@ -130,7 +136,11 @@ fun GoalScreen(
                 currentHours = goalsWithProgress.find { it.category == LocationCategory.BAR }?.let { it.currentMinutes / 60f }
                     ?: 0f,
                 enabled = !slidersLocked,
-                color = Color(0xFFFF6F00)
+                color = Color(0xFFEF6C00),
+                fontColor = Color(0xFF121212),
+                labelFontSize = 24.sp,
+                progressFontSize = 16.sp,
+                targetFontSize = 18.sp
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -145,10 +155,14 @@ fun GoalScreen(
                 currentHours = goalsWithProgress.find { it.category == LocationCategory.GYM }?.let { it.currentMinutes / 60f }
                     ?: 0f,
                 enabled = !slidersLocked,
-                color = Color(0xFF2E7D32)
+                color = Color(0xFF388E3C),
+                fontColor = Color(0xFF121212),
+                labelFontSize = 24.sp,
+                progressFontSize = 16.sp,
+                targetFontSize = 18.sp
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -159,8 +173,11 @@ fun GoalScreen(
                     enabled = slidersLocked,
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary, // baby blue when enabled
+                        contentColor = Color.White,         // text color when enabled
+                        disabledContainerColor = Color(0xFFB0BEC5), // muted gray when disabled
+                        disabledContentColor = Color.White.copy(alpha = 0.5f) // slightly faded text
                     )
                 ) {
                     Icon(
@@ -169,7 +186,7 @@ fun GoalScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Edit Goals", fontWeight = FontWeight.SemiBold)
+                    Text("Edit Goals", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Button(
@@ -188,7 +205,7 @@ fun GoalScreen(
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Icon(
@@ -197,7 +214,7 @@ fun GoalScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save Goals", fontWeight = FontWeight.SemiBold)
+                    Text("Save Goals", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -216,7 +233,11 @@ fun ImprovedGoalCard(
     progress: Float,
     currentHours: Float,
     enabled: Boolean,
-    color: Color
+    color: Color,
+    fontColor: Color = MaterialTheme.colorScheme.onSurface,
+    labelFontSize: TextUnit = 16.sp,
+    progressFontSize: TextUnit = 10.sp,
+    targetFontSize: TextUnit = 10.sp
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -226,7 +247,7 @@ fun ImprovedGoalCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(13.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -235,9 +256,9 @@ fun ImprovedGoalCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(54.dp)
                             .clip(CircleShape)
-                            .background(color.copy(alpha = 0.15f)),
+                            .background(color.copy(alpha = 0.35f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
@@ -253,6 +274,7 @@ fun ImprovedGoalCard(
                     Column {
                         Text(
                             text = label,
+                            fontSize = labelFontSize,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -263,30 +285,31 @@ fun ImprovedGoalCard(
                             } else {
                                 "${currentHours.toInt()} / ${hours.toInt()} Hours"
                             },
+                            fontSize = progressFontSize,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = fontColor
                         )
                     }
                 }
 
                 // Circular Progress
                 Box(
-                    modifier = Modifier.size(52.dp),
+                    modifier = Modifier.size(62.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.size(52.dp),
+                        modifier = Modifier.size(62.dp),
                         color = color,
-                        trackColor = color.copy(alpha = 0.2f),
-                        strokeWidth = 5.dp
+                        trackColor = color.copy(alpha = 0.3f),
+                        strokeWidth = 4.dp
                     )
                     Text(
                         text = "${(progress * 100).toInt()}%",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = color,
-                        fontSize = 11.sp
+                        fontSize = 16.sp
                     )
                 }
             }
@@ -297,8 +320,9 @@ fun ImprovedGoalCard(
             Column {
                 Text(
                     text = "Weekly Target: ${hours.toInt()} hours",
+                    fontSize = targetFontSize,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = fontColor,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Slider(
@@ -309,7 +333,11 @@ fun ImprovedGoalCard(
                     colors = SliderDefaults.colors(
                         thumbColor = color,
                         activeTrackColor = color,
-                        inactiveTrackColor = color.copy(alpha = 0.2f)
+                        inactiveTrackColor = color.copy(alpha = 0.3f),
+
+                        disabledThumbColor = color.copy(alpha = 0.5f),
+                        disabledActiveTrackColor = color.copy(alpha = 0.3f),
+                        disabledInactiveTrackColor = color.copy(alpha = 0.1f)
                     )
                 )
             }
