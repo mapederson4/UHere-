@@ -210,7 +210,10 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Login", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    "Login",
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
         }
 

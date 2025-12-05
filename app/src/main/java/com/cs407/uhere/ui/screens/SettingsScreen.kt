@@ -128,7 +128,7 @@ fun SettingsScreen(
             .verticalScroll(scrollState)
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Beautiful Header with Gradient
+        // Beautiful Header with gradient
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -140,7 +140,7 @@ fun SettingsScreen(
                         )
                     )
                 )
-                .padding(24.dp)
+                .padding(20.dp)
         ) {
             Column {
                 Row(
@@ -160,13 +160,14 @@ fun SettingsScreen(
                         tint = Color.White,
                         modifier = Modifier
                             .padding(start = 8.dp)
-                            .size(28.dp)
+                            .size(30.dp)
                     )
                 }
                 Text(
                     text = "Manage your account and preferences",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = Color.White.copy(alpha = 0.95f),
+                    fontSize = 20.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -175,21 +176,24 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(8.dp)
         ) {
-            // Account Section
+            // Account section
             Text(
                 text = "Account",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                modifier = Modifier.padding(
+                    bottom = 6.dp,
+                    start = 4.dp
+                )
             )
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 6.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -199,7 +203,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -207,21 +211,23 @@ fun SettingsScreen(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
-                            .size(56.dp)
-                            .padding(end = 16.dp)
+                            .size(64.dp)
+                            .padding(end = 18.dp)
                     )
                     Column {
                         Text(
                             text = userState?.displayName ?: "User",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            fontSize = 30.sp,
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = userState?.email ?: "email@example.com",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -233,13 +239,16 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                modifier = Modifier.padding(
+                    bottom = 8.dp,
+                    start = 4.dp
+                )
             )
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 6.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -251,7 +260,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .padding(12.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -262,7 +271,7 @@ fun SettingsScreen(
                             contentDescription = null,
                             tint = if (isTracking) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(56.dp)
                                 .padding(end = 16.dp)
                         )
                         Column {
@@ -270,13 +279,15 @@ fun SettingsScreen(
                                 text = "Location Tracking",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                fontSize = 24.sp,
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = if (isTracking) "Currently active" else "Paused",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -318,7 +329,10 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                modifier = Modifier.padding(
+                    bottom = 6.dp,
+                    start = 4.dp
+                )
             )
 
             Card(
@@ -327,23 +341,30 @@ fun SettingsScreen(
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    containerColor = MaterialTheme.colorScheme.primary
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text(
-                        text = "Force Week End",
+                        text = "Force End of Week",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        color = Color(0xFFFFFFFF),
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
-                        text = "Manually trigger week transition to test streak tracking. This will save current week's progress and start a new week.",
+                        text = "Manually end week to test streak tracking.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        color = Color(0xFFFFFFFF),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    Text(
+                        text = "Save current week's progress and start a new week.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFFFFFFF),
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
 
                     Row(
@@ -376,13 +397,20 @@ fun SettingsScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.weight(1f).height(48.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary
+                                containerColor = Color(0xFFFFFFFF)
                             )
                         ) {
-                            Text("Check Progress", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Text(
+                                "Check Progress",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
 
                         Button(
@@ -483,10 +511,15 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f).height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary
+                                containerColor = Color(0xFFFFFFFF)
                             )
                         ) {
-                            Text("Force Week End", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Text(
+                                "Force Week End",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
 
@@ -495,8 +528,9 @@ fun SettingsScreen(
                         Text(
                             text = showWeekMessage,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            fontWeight = FontWeight.Medium
+                            color = Color(0xFFFFFFFF),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
                         )
                     }
                 }
@@ -508,32 +542,33 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
             )
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 12.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    containerColor = MaterialTheme.colorScheme.primary
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text(
                         text = "Demo Mode",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        color = Color(0xFFFFFFFF),
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
-                        text = "Load sample progress data for testing and demonstration purposes",
+                        text = "Load sample progress data for testing and demo purposes",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        color = Color(0xFFFFFFFF),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
 
                     Row(
@@ -550,10 +585,15 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f).height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                containerColor = Color.White,
+                                contentColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Load Demo", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Load Demo",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
 
                         OutlinedButton(
@@ -566,10 +606,15 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f).height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                containerColor = Color.White,
+                                contentColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
-                            Text("Clear Data", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Clear Data",
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                                )
                         }
                     }
 
@@ -578,7 +623,8 @@ fun SettingsScreen(
                         Text(
                             text = "✓ Data updated successfully",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            color = Color(0xFFFFFFFF),
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -598,7 +644,7 @@ fun SettingsScreen(
             ) {
                 Text(
                     "Logout",
-                    fontSize = 16.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }

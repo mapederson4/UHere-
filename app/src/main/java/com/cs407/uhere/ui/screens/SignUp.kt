@@ -211,7 +211,11 @@ fun SignUpScreen(
                     focusManager.clearFocus()
                     if (isFormValid) {
                         isLoading = true
-                        onSignUpClick(name, email, password) { loading ->
+                        onSignUpClick(
+                            name,
+                            email,
+                            password
+                        ) { loading ->
                             isLoading = loading
                         }
                     }
