@@ -33,7 +33,10 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val user = userDao.getUserByFirebaseUid(firebaseUid)
             _userState.value = user
-            android.util.Log.d("UserViewModel", "Loaded user: id=${user?.id}, uid=${user?.firebaseUid}")
+            android.util.Log.d(
+                "UserViewModel",
+                "Loaded user: id=${user?.id}, uid=${user?.firebaseUid}"
+            )
         }
     }
 
@@ -44,13 +47,19 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
             if (existingUser != null) {
                 // User exists, use existing ID
-                android.util.Log.d("UserViewModel", "User exists: id=${existingUser.id}")
+                android.util.Log.d(
+                    "UserViewModel",
+                    "User exists: id=${existingUser.id}"
+                )
                 _userState.value = existingUser
             } else {
                 // New user, insert
                 val newUserId = userDao.insertUser(user)
                 val insertedUser = user.copy(id = newUserId.toInt())
-                android.util.Log.d("UserViewModel", "New user created: id=${insertedUser.id}")
+                android.util.Log.d(
+                    "UserViewModel",
+                    "New user created: id=${insertedUser.id}"
+                )
                 _userState.value = insertedUser
             }
         }

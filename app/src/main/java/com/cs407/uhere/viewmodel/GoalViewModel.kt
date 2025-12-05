@@ -101,7 +101,10 @@ class GoalViewModel(application: Application) : AndroidViewModel(application) {
 
             val inserted = goalCompletionDao.insertCompletion(completion)
             if (inserted > 0) {
-                android.util.Log.d("GoalViewModel", "🎉 BADGE UNLOCKED! ${category.name} goal completed at 100%!")
+                android.util.Log.d(
+                    "GoalViewModel",
+                    "🎉 BADGE UNLOCKED! ${category.name} goal completed at 100%!"
+                )
             }
         }
     }

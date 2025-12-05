@@ -77,7 +77,7 @@ fun HomeScreen(
             .verticalScroll(scrollState)
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Beautiful header with Gradient
+        // Beautiful header with gradient
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -224,13 +224,13 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(50.dp)
+                                    modifier = Modifier.size(52.dp)
                                 )
                                 Spacer(
                                     modifier = Modifier.height(16.dp)
                                 )
                                 Text("Analyzing your progress...",
-                                    fontSize = 20.sp
+                                    fontSize = 22.sp
                                 )
                             }
                         }
@@ -240,10 +240,10 @@ fun HomeScreen(
                                     aiError ?: "",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(bottom = 8.dp)
+                                    modifier = Modifier.padding(bottom = 7.dp)
                                 )
                                 HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 8.dp)
+                                    modifier = Modifier.padding(vertical = 7.dp)
                                 )
                                 Text(aiSummary ?: "",
                                     style = MaterialTheme.typography.bodyMedium
@@ -256,7 +256,7 @@ fun HomeScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontSize = 16.sp,
                                 color = Color(0xFF121212),
-                                lineHeight = 24.sp
+                                lineHeight = 22.sp
                             )
                         }
                     }
@@ -322,7 +322,7 @@ fun ImprovedCategoryProgressCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Circle
+            // Icon circle
             Box(
                 modifier = Modifier
                     .size(64.dp)
@@ -451,7 +451,7 @@ fun buildPromptFromGoals(
         }
         val progressPercent = (g.progressPercentage * 100).toInt()
         val status = when {
-            progressPercent >= 100 -> "COMPLETED"
+            progressPercent >= 100 -> "completed"
             progressPercent >= 75 -> "almost there"
             progressPercent >= 50 -> "halfway"
             progressPercent >= 25 -> "started"
@@ -478,7 +478,7 @@ fun buildPromptFromGoals(
         
         write a personalized summary with:
         1. One sentence describing their overall progress
-        2. One specific callout (praise what they're doing well, or encourage where they're behind)
+        2. One specific callout (praise what they are doing well, or encourage where they're behind)
         3. One actionable tip for the next week
         
         Be casual, positive, and concise. Use "you" not "the user". Do not use bullet points.

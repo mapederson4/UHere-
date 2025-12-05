@@ -50,9 +50,15 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            android.util.Log.d("MainActivity", "✅ Notification permission granted")
+            android.util.Log.d(
+                "MainActivity",
+                "✅ Notification permission granted"
+            )
         } else {
-            android.util.Log.d("MainActivity", "❌ Notification permission denied")
+            android.util.Log.d(
+                "MainActivity",
+                "❌ Notification permission denied"
+            )
             Toast.makeText(
                 this,
                 "Notification permission is required for check-in alerts",
@@ -69,7 +75,10 @@ class MainActivity : ComponentActivity() {
 
         try {
             val apiKey = applicationContext.packageManager
-                .getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+                .getApplicationInfo(
+                    packageName,
+                    PackageManager.GET_META_DATA
+                )
                 .metaData
                 ?.getString("com.google.android.geo.API_KEY")
 
@@ -77,7 +86,11 @@ class MainActivity : ComponentActivity() {
                 Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
             }
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Failed to initialize Places API", e)
+            android.util.Log.e(
+                "MainActivity",
+                "Failed to initialize Places API",
+                e
+            )
         }
 
         initializeBadges(this)
@@ -100,7 +113,10 @@ class MainActivity : ComponentActivity() {
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    android.util.Log.d("MainActivity", "Notification permission already granted")
+                    android.util.Log.d(
+                        "MainActivity",
+                        "Notification permission already granted"
+                    )
                 }
                 shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
                     // Show explanation to user
@@ -117,7 +133,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         } else {
-            android.util.Log.d("MainActivity", "Notification permission not required (Android < 13)")
+            android.util.Log.d(
+                "MainActivity",
+                "Notification permission not required (Android < 13)"
+            )
         }
     }
 }
@@ -145,7 +164,13 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
     val userState by userViewModel.userState.collectAsState()
-    val items = listOf(Screen.Home, Screen.Goal, Screen.Maps, Screen.Reward, Screen.Settings)
+    val items = listOf(
+        Screen.Home,
+        Screen.Goal,
+        Screen.Maps,
+        Screen.Reward,
+        Screen.Settings
+    )
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -155,12 +180,22 @@ fun AppNavigation(
         userState?.let { user ->
             coroutineScope.launch {
                 try {
-                    android.util.Log.d("MainActivity", "Checking week transition for user ${user.id}")
+                    android.util.Log.d(
+                        "MainActivity",
+                        "Checking week transition for user ${user.id}"
+                    )
                     val weeklyProgressManager = WeeklyProgressManager(context)
                     weeklyProgressManager.checkAndHandleWeekTransition(user.id)
-                    android.util.Log.d("MainActivity", "Week transition check completed")
+                    android.util.Log.d(
+                        "MainActivity",
+                        "Week transition check completed"
+                    )
                 } catch (e: Exception) {
-                    android.util.Log.e("MainActivity", "Error checking week transition", e)
+                    android.util.Log.e(
+                        "MainActivity",
+                        "Error checking week transition",
+                        e
+                    )
                 }
             }
         }
@@ -211,7 +246,11 @@ fun AppNavigation(
                         },
                         onError = { error ->
                             setLoading(false)
-                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                error,
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     )
                 },
@@ -239,13 +278,21 @@ fun AppNavigation(
                                     userViewModel.setUser(user)
                                 } else {
                                     setLoading(false)
-                                    Toast.makeText(context, "Failed to update display name", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Failed to update display name",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         },
                         onError = { error ->
                             setLoading(false)
-                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                error,
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     )
                 },
@@ -341,7 +388,10 @@ fun BottomNavigationBar(
                     if (screen.icon != null)
                         Icon(screen.icon, contentDescription = screen.label)
                     else
-                        Icon(painterResource(screen.res!!), contentDescription = screen.label)
+                        Icon(
+                            painterResource(screen.res!!),
+                            contentDescription = screen.label
+                        )
                 },
                 label = { Text(screen.label) },
                 selected = currentRoute == screen.route,
