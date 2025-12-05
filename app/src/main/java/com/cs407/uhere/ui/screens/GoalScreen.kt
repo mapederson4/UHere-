@@ -174,10 +174,10 @@ fun GoalScreen(
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary, // baby blue when enabled
-                        contentColor = Color.White,         // text color when enabled
-                        disabledContainerColor = Color(0xFFB0BEC5), // muted gray when disabled
-                        disabledContentColor = Color.White.copy(alpha = 0.5f) // slightly faded text
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFFB0BEC5),
+                        disabledContentColor = Color.White.copy(alpha = 0.5f)
                     )
                 ) {
                     Icon(
@@ -186,7 +186,10 @@ fun GoalScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Edit Goals", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Edit Goals",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Button(
@@ -214,7 +217,10 @@ fun GoalScreen(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save Goals", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Save Goals",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
 
