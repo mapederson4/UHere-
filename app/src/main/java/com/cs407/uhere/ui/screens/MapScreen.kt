@@ -138,10 +138,14 @@ fun MapsScreen(
 
     LaunchedEffect(Unit) {
         val apiKey = context.packageManager
-            .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+            .getApplicationInfo(context.packageName,
+                PackageManager.GET_META_DATA
+            )
             .metaData
             .getString("com.google.android.geo.API_KEY")
-        android.util.Log.d("MapsScreen", "API Key loaded: ${apiKey?.take(10)}...")
+        android.util.Log.d("MapsScreen",
+            "API Key loaded: ${apiKey?.take(10)}..."
+        )
     }
 
     var showAddPlaceDialog by remember { mutableStateOf(false) }
@@ -164,7 +168,10 @@ fun MapsScreen(
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            LatLng(43.0731, -89.4012), // Madison, WI
+            LatLng(
+                43.0731,
+                -89.4012
+            ), // Madison, WI
             12f
         )
     }
@@ -172,7 +179,10 @@ fun MapsScreen(
     // Memoize markers to prevent recomposition lag
     val markersAndCircles = remember(userPlaces) {
         userPlaces.map { place ->
-            place to LatLng(place.latitude, place.longitude)
+            place to LatLng(
+                place.latitude,
+                place.longitude
+            )
         }
     }
 
@@ -221,7 +231,10 @@ fun MapsScreen(
                     },
                     onMapLoaded = {
                         mapLoaded = true
-                        android.util.Log.d("MapsScreen", "Map loaded successfully")
+                        android.util.Log.d(
+                            "MapsScreen",
+                            "Map loaded successfully"
+                        )
                     }
                 ) {
                     LaunchedEffect(cameraPositionState.isMoving) {
@@ -274,7 +287,11 @@ fun MapsScreen(
                 PlacesSearchBar(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(4.dp, 4.dp, 64.dp, 0.dp),
+                        .padding(
+                            4.dp,
+                            4.dp,
+                            64.dp,
+                            0.dp),
                     onPlaceSelected = { place ->
                         place.latLng?.let { latLng ->
                             searchedLocation = latLng
@@ -348,7 +365,10 @@ fun MapsScreen(
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
-                Icon(Icons.Default.Add, "Add Place")
+                Icon(
+                    Icons.Default.Add,
+                    "Add Place"
+                )
             }
         }
     }
@@ -397,7 +417,10 @@ fun MapsScreen(
         delay(10000) // 10 seconds
         if (!mapLoaded && mapError == null) {
             mapError = "Map taking too long to load. Check your internet connection and API key."
-            android.util.Log.e("MapsScreen", "Map load timeout")
+            android.util.Log.e(
+                "MapsScreen",
+                "Map load timeout"
+            )
         }
     }
 
@@ -522,7 +545,11 @@ fun AddPlaceDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(name, category, radius.toDouble()) },
+                onClick = { onConfirm(
+                    name,
+                    category,
+                    radius.toDouble()
+                ) },
                 enabled = name.isNotBlank()
             ) {
                 Text("Add")
@@ -594,10 +621,17 @@ fun PlacesSearchBar(
             textStyle = TextStyle(color = Color(0xFF1A1A1A)),
             placeholder = { Text("Search location...") },
             singleLine = true,
-            trailingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = null
+                ) },
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White.copy(alpha = 0.7f), shape = RoundedCornerShape(12.dp))
+                .background(
+                    Color.White.copy(alpha = 0.7f),
+                    shape = RoundedCornerShape(12.dp)
+                )
         )
 
         if (predictions.isNotEmpty()) {
@@ -615,7 +649,10 @@ fun PlacesSearchBar(
                                 val placeId = prediction.placeId
                                 val placeRequest = FetchPlaceRequest.newInstance(
                                     placeId,
-                                    listOf(Place.Field.LAT_LNG, Place.Field.NAME)
+                                    listOf(
+                                        Place.Field.LAT_LNG,
+                                        Place.Field.NAME
+                                    )
                                 )
                                 placesClient.fetchPlace(placeRequest)
                                     .addOnSuccessListener { response ->

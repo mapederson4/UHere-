@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cs407.uhere.R
@@ -79,10 +80,23 @@ fun RewardScreen(
     val libraryCompletions = completions.filter { it.category == LocationCategory.LIBRARY }
 
     // Calculate streaks from WEEKLY progress (for streak display)
-    val libraryStreak = StreakCalculator.calculateCategoryStreak(weeklyProgress, LocationCategory.LIBRARY)
-    val barStreak = StreakCalculator.calculateCategoryStreak(weeklyProgress, LocationCategory.BAR)
-    val gymStreak = StreakCalculator.calculateCategoryStreak(weeklyProgress, LocationCategory.GYM)
-    val allGoalsStreak = StreakCalculator.calculateAllGoalsStreak(weeklyProgress)
+    val libraryStreak = StreakCalculator.calculateCategoryStreak(
+        weeklyProgress,
+        LocationCategory.LIBRARY
+    )
+
+    val barStreak = StreakCalculator.calculateCategoryStreak(
+        weeklyProgress,
+        LocationCategory.BAR
+    )
+
+    val gymStreak = StreakCalculator.calculateCategoryStreak(
+        weeklyProgress,
+        LocationCategory.GYM
+    )
+    val allGoalsStreak = StreakCalculator.calculateAllGoalsStreak(
+        weeklyProgress
+    )
 
     val rewards = listOf(
         // Bar badges - INSTANT UNLOCK based on completions
@@ -165,6 +179,7 @@ fun RewardScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(100.dp)
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
@@ -173,7 +188,7 @@ fun RewardScreen(
                         )
                     )
                 )
-                .padding(24.dp)
+                .padding(12.dp)
         ) {
             Column {
                 Row(
@@ -185,7 +200,7 @@ fun RewardScreen(
                         style = MaterialTheme.typography.headlineLarge,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 32.sp
+                        fontSize = 36.sp
                     )
                     Icon(
                         imageVector = Icons.Default.Star,
@@ -193,54 +208,61 @@ fun RewardScreen(
                         tint = Color(0xFFFFD700),
                         modifier = Modifier
                             .padding(start = 8.dp)
-                            .size(28.dp)
+                            .size(32.dp)
                     )
                 }
                 Text(
                     text = "Track your streaks and unlock badges",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = Color.White.copy(alpha = 0.95f),
+                    fontSize = 20.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
 
-        // Scrollable Content
+        // Scrollable content
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(8.dp)
         ) {
             // STREAKS SECTION (using WeeklyProgress)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 Text(
                     text = "Your Streaks",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
+                    fontSize = 28.sp
                 )
                 Text(
                     text = " 🔥",
                     style = MaterialTheme.typography.titleLarge,
-                    fontSize = 24.sp
+                    fontSize = 28.sp
                 )
             }
 
             if (weeklyProgress.isNotEmpty()) {
-                // All Goals Streak
+                // All Goals streak
                 if (allGoalsStreak.totalWeeksCompleted > 0) {
                     StreakCard(
                         title = "All Goals Complete",
                         icon = Icons.Default.EmojiEvents,
                         iconColor = Color(0xFFFFD700),
+                        labelFontSize = 20.sp,
+                        labelFontColor = MaterialTheme.colorScheme.primary,
+                        progressFontSize = 14.sp,
+                        progressFontColor = Color(0xFF000000),
+                        bestFontSize = 12.sp,
+                        bestFontColor = Color(0xFF000000),
                         streakInfo = allGoalsStreak,
                         isPrimary = true
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
 
                 // Individual category streaks
@@ -254,7 +276,11 @@ fun RewardScreen(
                             iconRes = R.drawable.book,
                             streakInfo = libraryStreak,
                             color = Color(0xFF1E88E5),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            labelFontSize = 18.sp,
+                            labelFontColor = Color(0xFF000000),
+                            bestFontSize = 16.sp,
+                            bestFontColor = Color(0xFF121212)
                         )
                     }
 
@@ -264,7 +290,11 @@ fun RewardScreen(
                             iconRes = R.drawable.barbell,
                             streakInfo = gymStreak,
                             color = Color(0xFF43A047),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            labelFontSize = 18.sp,
+                            labelFontColor = Color(0xFF000000),
+                            bestFontSize = 16.sp,
+                            bestFontColor = Color(0xFF121212)
                         )
                     }
 
@@ -274,7 +304,11 @@ fun RewardScreen(
                             iconRes = R.drawable.drink,
                             streakInfo = barStreak,
                             color = Color(0xFFFB8C00),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            labelFontSize = 18.sp,
+                            labelFontColor = Color(0xFF000000),
+                            bestFontSize = 16.sp,
+                            bestFontColor = Color(0xFF121212)
                         )
                     }
                 }
@@ -289,29 +323,30 @@ fun RewardScreen(
                     Text(
                         text = "Complete your first week to start tracking streaks!",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
+                        fontSize = 16.sp,
+                        color = Color(0xFF000000),
+                        modifier = Modifier.padding(12.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // BADGES SECTION (using GoalCompletions - instant unlock)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 Text(
                     text = "Collectible Badges",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
+                    fontSize = 26.sp
                 )
                 Text(
                     text = " 🏆",
                     style = MaterialTheme.typography.titleLarge,
-                    fontSize = 24.sp
+                    fontSize = 26.sp
                 )
             }
 
@@ -331,13 +366,15 @@ fun RewardScreen(
                     Text(
                         text = "$unlockedCount of $totalCount unlocked",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp
                     )
                     Text(
                         text = "${((unlockedCount.toFloat() / totalCount) * 100).toInt()}%",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 24.sp
                     )
                 }
             }
@@ -347,7 +384,10 @@ fun RewardScreen(
                 columns = GridCells.Fixed(3),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.heightIn(min = 350.dp, max = 900.dp),
+                modifier = Modifier.heightIn(
+                    min = 300.dp,
+                    max = 800.dp
+                ),
                 userScrollEnabled = false
             ) {
                 items(rewards) { reward ->
@@ -366,10 +406,18 @@ fun StreakCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     iconColor: Color,
     streakInfo: StreakInfo,
+    labelFontColor: Color = MaterialTheme.colorScheme.primary,
+    labelFontSize: TextUnit = 16.sp,
+    progressFontColor: Color = MaterialTheme.colorScheme.primary,
+    progressFontSize: TextUnit = 12.sp,
+    bestFontSize: TextUnit = 12.sp,
+    bestFontColor: Color = MaterialTheme.colorScheme.primary,
     isPrimary: Boolean = false
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(68.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isPrimary) {
@@ -383,7 +431,7 @@ fun StreakCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -402,13 +450,18 @@ fun StreakCard(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleSmall,
+                        fontSize = labelFontSize,
+                        color = labelFontColor,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${streakInfo.totalWeeksCompleted} weeks completed",
+                        text = "${streakInfo.totalWeeksCompleted} " +
+                                    if (streakInfo.totalWeeksCompleted == 1) "week completed" else "weeks completed"
+
+                        ,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp
+                        color = progressFontColor,
+                        fontSize = progressFontSize
                     )
                 }
             }
@@ -422,20 +475,21 @@ fun StreakCard(
                         imageVector = Icons.Default.LocalFireDepartment,
                         contentDescription = "Streak",
                         tint = Color(0xFFFF6B35),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                     Text(
                         text = "${streakInfo.currentStreak}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFF6B35)
+                        color = Color(0xFFFF6B35),
+                        fontSize = 28.sp
                     )
                 }
                 Text(
                     text = "Best: ${streakInfo.bestStreak}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp
+                    color = bestFontColor,
+                    fontSize = bestFontSize
                 )
             }
         }
@@ -448,35 +502,35 @@ fun CategoryStreakCard(
     iconRes: Int,
     streakInfo: StreakInfo,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    labelFontColor: Color = MaterialTheme.colorScheme.primary,
+    labelFontSize: TextUnit = 16.sp,
+    bestFontColor: Color = MaterialTheme.colorScheme.primary,
+    bestFontSize: TextUnit = 16.sp,
 ) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
+            containerColor = color.copy(alpha = 0.4f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .height(100.dp)
+                .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Image(
-                painter = painterResource(iconRes),
-                contentDescription = title,
-                modifier = Modifier.size(28.dp),
-                contentScale = ContentScale.Fit
-            )
 
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp
+                fontSize = labelFontSize,
+                color = labelFontColor
             )
 
             Row(
@@ -487,22 +541,22 @@ fun CategoryStreakCard(
                     imageVector = Icons.Default.LocalFireDepartment,
                     contentDescription = "Streak",
                     tint = Color(0xFFFF6B35),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(28.dp)
                 )
                 Text(
                     text = "${streakInfo.currentStreak}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = color,
-                    fontSize = 20.sp
+                    color = Color(0xFFFF6B35),
+                    fontSize = 28.sp
                 )
             }
 
             Text(
                 text = "Best: ${streakInfo.bestStreak}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp
+                color = bestFontColor,
+                fontSize = bestFontSize
             )
         }
     }
@@ -537,13 +591,16 @@ fun FlippableRewardCard(reward: Reward) {
 
     val rotation by animateFloatAsState(
         targetValue = if (isFlipped) 180f else 0f,
-        animationSpec = tween(durationMillis = 600),
+        animationSpec = tween(durationMillis = 800),
         label = "cardFlip"
     )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .height(108.dp)
+            .width(116.dp)
+            .padding(8.dp)
             .aspectRatio(1f)
             .graphicsLayer {
                 rotationY = rotation
@@ -559,6 +616,9 @@ fun FlippableRewardCard(reward: Reward) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .height(100.dp)
+                .width(110.dp)
+                .padding(0.dp)
                 .graphicsLayer {
                     rotationY = if (rotation > 90f) 180f else 0f
                 },
@@ -602,59 +662,107 @@ fun FlippableRewardCard(reward: Reward) {
                             Text(
                                 text = "Locked",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = Color(0xFF000000),
                                 fontWeight = FontWeight.Medium,
-                                fontSize = 10.sp
+                                fontSize = 16.sp
                             )
                         }
                     }
                 }
             } else {
                 // Back side
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                    MaterialTheme.colorScheme.secondaryContainer
-                                )
-                            )
-                        )
-                ) {
-                    Column(
+                if (reward.isUnlocked){
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    )
+                                )
+                            )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = if (reward.isUnlocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        Column(
                             modifier = Modifier
-                                .size(24.dp)
-                                .padding(bottom = 4.dp)
-                        )
-                        Text(
-                            text = reward.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(bottom = 3.dp),
-                            fontSize = 11.sp
-                        )
-                        Text(
-                            text = reward.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            fontSize = 8.sp
-                        )
+                                .fillMaxSize()
+                                .padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = if (reward.isUnlocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(bottom = 3.dp)
+                            )
+                            Text(
+                                text = reward.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(bottom = 3.dp),
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = reward.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                fontSize = 7.sp
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    )
+                                )
+                            )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                tint = if (reward.isUnlocked) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(bottom = 3.dp)
+                            )
+                            Text(
+                                text = reward.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF000000),
+                                modifier = Modifier.padding(bottom = 3.dp),
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = reward.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF000000),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                fontSize = 7.sp
+                            )
+                        }
                     }
                 }
+
             }
         }
     }
