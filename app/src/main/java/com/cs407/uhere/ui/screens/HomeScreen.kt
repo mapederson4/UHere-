@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cs407.uhere.BuildConfig
@@ -76,7 +77,7 @@ fun HomeScreen(
             .verticalScroll(scrollState)
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Beautiful Header with Gradient
+        // Beautiful header with Gradient
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -95,7 +96,7 @@ fun HomeScreen(
                     text = "Welcome back,",
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 16.sp
+                    fontSize = 20.sp
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -106,7 +107,7 @@ fun HomeScreen(
                         style = MaterialTheme.typography.headlineLarge,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 32.sp
+                        fontSize = 36.sp
                     )
                     Icon(
                         imageVector = Icons.Default.Star,
@@ -114,29 +115,31 @@ fun HomeScreen(
                         tint = Color(0xFFFFD700),
                         modifier = Modifier
                             .padding(start = 8.dp)
-                            .size(28.dp)
+                            .size(30.dp)
                     )
                 }
                 Text(
                     text = "Here's your weekly progress",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = Color.White.copy(alpha = 0.95f),
+                    fontSize = 16.sp,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
 
-        // Content Section
+        // Content section
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Progress Cards
+            // Progress cards
             if (goalsWithProgress.isNotEmpty()) {
                 Text(
                     text = "This Week's Goals",
                     style = MaterialTheme.typography.titleLarge,
+                    fontSize = 36.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -147,7 +150,11 @@ fun HomeScreen(
                         category = goalWithProgress.category,
                         progress = goalWithProgress.progressPercentage,
                         currentMinutes = goalWithProgress.currentMinutes,
-                        targetHours = goalWithProgress.targetHours
+                        targetHours = goalWithProgress.targetHours,
+                        titleFontSize = 20.sp,
+                        titleFontColor = Color(0xFF000000),
+                        progressFontSize = 16.sp,
+                        progressFontColor = Color(0xFF333333)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -157,7 +164,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // AI Summary Button
+            // AI Summary button
             Button(
                 onClick = {
                     showDialog = true
@@ -172,8 +179,11 @@ fun HomeScreen(
                             aiSummary = result
                             aiError = null
                         } catch (e: Exception) {
-                            android.util.Log.e("HomeScreen", "AI Error", e)
-                            aiError = "Couldn't reach AI service. Showing simple summary."
+                            android.util.Log.e("HomeScreen",
+                                "AI Error",
+                                e
+                            )
+                            aiError = "Could not reach AI service. Showing simple summary."
                             aiSummary = generateSimpleSummary(goalsWithProgress)
                         } finally {
                             aiLoading = false
@@ -186,12 +196,12 @@ fun HomeScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Text(
                     "Get AI Weekly Insights",
-                    fontSize = 16.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -202,7 +212,7 @@ fun HomeScreen(
                 onDismissRequest = { showDialog = false },
                 title = {
                     Text(
-                        text = "Your Weekly Insights",
+                        text = "Your weekly insights",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -213,9 +223,15 @@ fun HomeScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                CircularProgressIndicator(modifier = Modifier.size(40.dp))
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text("Analyzing your progress...")
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(50.dp)
+                                )
+                                Spacer(
+                                    modifier = Modifier.height(16.dp)
+                                )
+                                Text("Analyzing your progress...",
+                                    fontSize = 20.sp
+                                )
                             }
                         }
                         aiError != null -> {
@@ -226,14 +242,20 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                                Text(aiSummary ?: "", style = MaterialTheme.typography.bodyMedium)
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                Text(aiSummary ?: "",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
                         }
                         aiSummary != null -> {
                             Text(
                                 aiSummary ?: "",
                                 style = MaterialTheme.typography.bodyMedium,
+                                fontSize = 16.sp,
+                                color = Color(0xFF121212),
                                 lineHeight = 24.sp
                             )
                         }
@@ -241,7 +263,10 @@ fun HomeScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = { showDialog = false }) {
-                        Text("Close")
+                        Text("Close",
+                            fontSize = 24.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 },
                 shape = RoundedCornerShape(20.dp)
@@ -255,16 +280,36 @@ fun ImprovedCategoryProgressCard(
     category: LocationCategory,
     progress: Float,
     currentMinutes: Int,
-    targetHours: Float
+    targetHours: Float,
+    titleFontSize: TextUnit = 16.sp,
+    titleFontColor: Color = MaterialTheme.colorScheme.onSurface,
+    progressFontSize: TextUnit = 12.sp,
+    progressFontColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     val (iconRes, label, color) = when (category) {
-        LocationCategory.LIBRARY -> Triple(R.drawable.book, "Library", Color(0xFF1976D2))
-        LocationCategory.BAR -> Triple(R.drawable.drink, "Social Time", Color(0xFFFF6F00))
-        LocationCategory.GYM -> Triple(R.drawable.barbell, "Fitness", Color(0xFF2E7D32))
+        LocationCategory.LIBRARY -> Triple(
+            R.drawable.book,
+            "Library",
+            Color(0xFF64B5F6)
+        )
+
+        LocationCategory.BAR -> Triple(
+            R.drawable.drink,
+            "Social Time",
+            Color(0xFFEF6C00)
+        )
+
+        LocationCategory.GYM -> Triple(
+            R.drawable.barbell,
+            "Fitness",
+            Color(0xFF388E3C)
+        )
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -280,9 +325,9 @@ fun ImprovedCategoryProgressCard(
             // Icon Circle
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(64.dp)
                     .clip(CircleShape)
-                    .background(color.copy(alpha = 0.15f)),
+                    .background(color.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -300,14 +345,16 @@ fun ImprovedCategoryProgressCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.titleMedium,
+                    fontSize = titleFontSize,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = titleFontColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${currentMinutes / 60}h ${currentMinutes % 60}m of ${targetHours.toInt()}h",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontSize = progressFontSize,
+                    color = progressFontColor
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
@@ -326,9 +373,9 @@ fun ImprovedCategoryProgressCard(
             // Progress Percentage
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(52.dp)
                     .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f)),
+                    .background(color.copy(alpha = 0.25f)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -336,7 +383,7 @@ fun ImprovedCategoryProgressCard(
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = color,
-                    fontSize = 14.sp
+                    fontSize = 16.sp
                 )
             }
         }
@@ -366,14 +413,14 @@ fun EmptyStateCard() {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Ready to Start?",
+                text = "Ready to start?",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Head to the Goals tab to set your weekly targets and start tracking your time!",
+                text = "Head to the goals tab to set your weekly targets and start tracking your time!",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -387,8 +434,8 @@ fun buildPromptFromGoals(
 ): String {
     if (goalsWithProgress.isEmpty()) {
         return """
-            The user hasn't set any weekly goals yet.
-            Write 1-2 encouraging sentences (max 100 words) motivating them to set goals and start tracking their time.
+            The user has not set any weekly goals yet.
+            Write one or two encouraging sentences (max 100 words) motivating them to set goals and start tracking their time.
         """.trimIndent()
     }
 
@@ -396,13 +443,15 @@ fun buildPromptFromGoals(
         val hours = g.currentMinutes / 60
         val mins = g.currentMinutes % 60
         val categoryName = when (g.category) {
-            LocationCategory.LIBRARY -> "studying at the library"
-            LocationCategory.GYM -> "working out at the gym"
             LocationCategory.BAR -> "socializing at bars"
+            LocationCategory.GYM -> "working out at the gym"
+            LocationCategory.LIBRARY -> "studying at the library"
+
+
         }
         val progressPercent = (g.progressPercentage * 100).toInt()
         val status = when {
-            progressPercent >= 100 -> "✓ COMPLETED"
+            progressPercent >= 100 -> "COMPLETED"
             progressPercent >= 75 -> "almost there"
             progressPercent >= 50 -> "halfway"
             progressPercent >= 25 -> "started"
@@ -413,26 +462,26 @@ fun buildPromptFromGoals(
 
     val totalProgress = goalsWithProgress.map { it.progressPercentage }.average()
     val overallStatus = when {
-        totalProgress >= 0.9 -> "crushing it"
-        totalProgress >= 0.7 -> "doing great"
-        totalProgress >= 0.5 -> "making steady progress"
+        totalProgress >= 0.9 -> "doing amazing"
+        totalProgress >= 0.7 -> "doing well"
+        totalProgress >= 0.5 -> "making progress"
         totalProgress >= 0.3 -> "off to a good start"
-        else -> "just getting started"
+        else -> "just starting"
     }
 
     return """
-        You are a friendly, motivating college productivity coach. Keep your response SHORT (max 150 words).
+        You are a friendly, motivating college productivity coach. Keep your response short (max 150 words).
         
-        The user is $overallStatus this week with their time goals. Here's their progress:
+        The user is $overallStatus this week with their time goals. Here is their progress:
         
         $goalsText
         
-        Write a personalized summary with:
-        1. One sentence acknowledging their overall progress
-        2. One specific callout (praise what they're doing well OR encourage where they're behind)
-        3. One actionable tip for next week
+        write a personalized summary with:
+        1. One sentence describing their overall progress
+        2. One specific callout (praise what they're doing well, or encourage where they're behind)
+        3. One actionable tip for the next week
         
-        Be casual, positive, and concise. Use "you" not "the user". NO bullet points.
+        Be casual, positive, and concise. Use "you" not "the user". Do not use bullet points.
     """.trimIndent()
 }
 
@@ -440,7 +489,7 @@ suspend fun callOpenAI(prompt: String): String = withContext(Dispatchers.IO) {
     val apiKey = BuildConfig.OPENAI_API_KEY
 
     if (apiKey.isBlank()) {
-        throw IOException("OpenAI API key not configured")
+        throw IOException("OpenAI API key is not configured")
     }
 
     val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -450,7 +499,7 @@ suspend fun callOpenAI(prompt: String): String = withContext(Dispatchers.IO) {
         put("messages", JSONArray().apply {
             put(JSONObject().apply {
                 put("role", "system")
-                put("content", "You are a supportive college productivity coach. Keep responses under 150 words and conversational.")
+                put("content", "You are a supportive college productivity coach. Keep responses under 150 words, and conversational.")
             })
             put(JSONObject().apply {
                 put("role", "user")
@@ -474,12 +523,12 @@ suspend fun callOpenAI(prompt: String): String = withContext(Dispatchers.IO) {
 
     if (!response.isSuccessful) {
         val errorBody = response.body?.string()
-        android.util.Log.e("OpenAI", "Error: ${response.code} - $errorBody")
-        throw IOException("OpenAI API error: ${response.code}")
+        android.util.Log.e("OpenAI", "Error : ${response.code} - $errorBody")
+        throw IOException("OpenAI API error : ${response.code}")
     }
 
     val responseBody = response.body?.string()
-        ?: throw IOException("Empty response from OpenAI")
+        ?: throw IOException("Empty response from OpenAI API")
 
     val json = JSONObject(responseBody)
     val choices = json.getJSONArray("choices")
@@ -493,7 +542,7 @@ fun generateSimpleSummary(
     goalsWithProgress: List<com.cs407.uhere.viewmodel.GoalWithProgress>
 ): String {
     if (goalsWithProgress.isEmpty()) {
-        return "Ready to make this week count? Head to the Goals tab to set your weekly targets and start tracking your time!"
+        return "Ready to make this week count? Head to the goals tab to set your weekly targets and start tracking your time!"
     }
 
     val totalProgress = goalsWithProgress.map { it.progressPercentage }.average()
@@ -503,12 +552,12 @@ fun generateSimpleSummary(
     val weakestCategory = goalsWithProgress.minByOrNull { it.progressPercentage }
 
     return buildString {
-        append("You're $progressPercent% towards your weekly goals. ")
+        append("You are $progressPercent% towards your weekly goals. ")
 
         bestCategory?.let {
             val categoryName = when (it.category) {
                 LocationCategory.LIBRARY -> "library time"
-                LocationCategory.GYM -> "gym sessions"
+                LocationCategory.GYM -> "gym time"
                 LocationCategory.BAR -> "social time"
             }
             val percent = (it.progressPercentage * 100).toInt()
@@ -519,13 +568,13 @@ fun generateSimpleSummary(
             if (it.progressPercentage < 0.5) {
                 val categoryName = when (it.category) {
                     LocationCategory.LIBRARY -> "studying"
-                    LocationCategory.GYM -> "working out"
+                    LocationCategory.GYM -> "exercising"
                     LocationCategory.BAR -> "socializing"
                 }
-                append("Try to spend a bit more time $categoryName this week. ")
+                append("Try to spend a little bit more time $categoryName this week. ")
             }
         }
 
-        append("Keep it up!")
+        append("Keep up the good work!")
     }
 }
