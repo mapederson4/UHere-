@@ -128,7 +128,7 @@ fun SettingsScreen(
             .verticalScroll(scrollState)
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Beautiful Header with gradient
+        // Beautiful header with gradient
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -176,7 +176,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(12.dp)
         ) {
             // Account section
             Text(
@@ -185,7 +185,7 @@ fun SettingsScreen(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(
-                    bottom = 6.dp,
+                    bottom = 8.dp,
                     start = 4.dp
                 )
             )
@@ -193,7 +193,7 @@ fun SettingsScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 6.dp),
+                    .padding(bottom = 8.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -248,7 +248,7 @@ fun SettingsScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 6.dp),
+                    .padding(bottom = 8.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -323,14 +323,14 @@ fun SettingsScreen(
                 }
             }
 
-            // **NEW: Week Testing Section**
+            // Week and streak force
             Text(
                 text = "Week & Streak Testing",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(
-                    bottom = 6.dp,
+                    bottom = 8.dp,
                     start = 4.dp
                 )
             )
@@ -338,7 +338,7 @@ fun SettingsScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 12.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primary

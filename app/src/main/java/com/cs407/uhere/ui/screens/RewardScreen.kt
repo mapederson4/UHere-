@@ -175,11 +175,11 @@ fun RewardScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header Section
+        // Header section
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp)
+                .height(110.dp)
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
@@ -188,35 +188,35 @@ fun RewardScreen(
                         )
                     )
                 )
-                .padding(12.dp)
+                .padding(20.dp)
         ) {
             Column {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 6.dp)
                 ) {
                     Text(
                         text = "Your Rewards",
                         style = MaterialTheme.typography.headlineLarge,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 36.sp
+                        fontSize = 34.sp
                     )
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = null,
                         tint = Color(0xFFFFD700),
                         modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(32.dp)
+                            .padding(start = 10.dp)
+                            .size(34.dp)
                     )
                 }
                 Text(
                     text = "Track your streaks and unlock badges",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.95f),
-                    fontSize = 20.sp,
-                    modifier = Modifier.padding(top = 8.dp)
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(top = 6.dp)
                 )
             }
         }
@@ -226,28 +226,28 @@ fun RewardScreen(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(8.dp)
+                .padding(12.dp)
         ) {
-            // STREAKS SECTION (using WeeklyProgress)
+            // Streak section (using WeeklyProgress)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 10.dp)
             ) {
                 Text(
                     text = "Your Streaks",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp
+                    fontSize = 26.sp
                 )
                 Text(
                     text = " 🔥",
                     style = MaterialTheme.typography.titleLarge,
-                    fontSize = 28.sp
+                    fontSize = 26.sp
                 )
             }
 
             if (weeklyProgress.isNotEmpty()) {
-                // All Goals streak
+                // All goals streak
                 if (allGoalsStreak.totalWeeksCompleted > 0) {
                     StreakCard(
                         title = "All Goals Complete",
@@ -255,14 +255,14 @@ fun RewardScreen(
                         iconColor = Color(0xFFFFD700),
                         labelFontSize = 20.sp,
                         labelFontColor = MaterialTheme.colorScheme.primary,
-                        progressFontSize = 14.sp,
+                        progressFontSize = 16.sp,
                         progressFontColor = Color(0xFF000000),
-                        bestFontSize = 12.sp,
+                        bestFontSize = 14.sp,
                         bestFontColor = Color(0xFF000000),
                         streakInfo = allGoalsStreak,
                         isPrimary = true
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
 
                 // Individual category streaks
@@ -277,9 +277,9 @@ fun RewardScreen(
                             streakInfo = libraryStreak,
                             color = Color(0xFF1E88E5),
                             modifier = Modifier.weight(1f),
-                            labelFontSize = 18.sp,
+                            labelFontSize = 20.sp,
                             labelFontColor = Color(0xFF000000),
-                            bestFontSize = 16.sp,
+                            bestFontSize = 15.sp,
                             bestFontColor = Color(0xFF121212)
                         )
                     }
@@ -291,9 +291,9 @@ fun RewardScreen(
                             streakInfo = gymStreak,
                             color = Color(0xFF43A047),
                             modifier = Modifier.weight(1f),
-                            labelFontSize = 18.sp,
+                            labelFontSize = 20.sp,
                             labelFontColor = Color(0xFF000000),
-                            bestFontSize = 16.sp,
+                            bestFontSize = 15.sp,
                             bestFontColor = Color(0xFF121212)
                         )
                     }
@@ -305,9 +305,9 @@ fun RewardScreen(
                             streakInfo = barStreak,
                             color = Color(0xFFFB8C00),
                             modifier = Modifier.weight(1f),
-                            labelFontSize = 18.sp,
+                            labelFontSize = 20.sp,
                             labelFontColor = Color(0xFF000000),
-                            bestFontSize = 16.sp,
+                            bestFontSize = 15.sp,
                             bestFontColor = Color(0xFF121212)
                         )
                     }
@@ -317,7 +317,7 @@ fun RewardScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                     )
                 ) {
                     Text(
@@ -325,14 +325,14 @@ fun RewardScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         fontSize = 16.sp,
                         color = Color(0xFF000000),
-                        modifier = Modifier.padding(12.dp)
+                        modifier = Modifier.padding(14.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // BADGES SECTION (using GoalCompletions - instant unlock)
+            // Badges section (using GoalCompletions - instant unlock)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -341,25 +341,25 @@ fun RewardScreen(
                     text = "Collectible Badges",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 26.sp
+                    fontSize = 28.sp
                 )
                 Text(
                     text = " 🏆",
                     style = MaterialTheme.typography.titleLarge,
-                    fontSize = 26.sp
+                    fontSize = 28.sp
                 )
             }
 
             // Progress indicator
             Card(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
                 )
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -379,14 +379,14 @@ fun RewardScreen(
                 }
             }
 
-            // Badges Grid
+            // Badges grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.heightIn(
-                    min = 300.dp,
-                    max = 800.dp
+                    min = 350.dp,
+                    max = 900.dp
                 ),
                 userScrollEnabled = false
             ) {
@@ -395,7 +395,7 @@ fun RewardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
         }
     }
 }
@@ -417,7 +417,7 @@ fun StreakCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(68.dp),
+            .height(70.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isPrimary) {
@@ -443,10 +443,12 @@ fun StreakCard(
                     imageVector = icon,
                     contentDescription = title,
                     tint = iconColor,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(34.dp)
                 )
 
-                Column {
+                Column (
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ){
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleSmall,
@@ -512,14 +514,13 @@ fun CategoryStreakCard(
         modifier = modifier,
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.4f)
+            containerColor = color.copy(alpha = 0.3f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp)
                 .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -598,9 +599,7 @@ fun FlippableRewardCard(reward: Reward) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(108.dp)
-            .width(116.dp)
-            .padding(8.dp)
+            .padding(4.dp)
             .aspectRatio(1f)
             .graphicsLayer {
                 rotationY = rotation
@@ -616,8 +615,6 @@ fun FlippableRewardCard(reward: Reward) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .height(100.dp)
-                .width(110.dp)
                 .padding(0.dp)
                 .graphicsLayer {
                     rotationY = if (rotation > 90f) 180f else 0f
@@ -704,6 +701,7 @@ fun FlippableRewardCard(reward: Reward) {
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.padding(bottom = 3.dp),
                                 fontSize = 13.sp
                             )
@@ -749,6 +747,7 @@ fun FlippableRewardCard(reward: Reward) {
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF000000),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.padding(bottom = 3.dp),
                                 fontSize = 13.sp
                             )
